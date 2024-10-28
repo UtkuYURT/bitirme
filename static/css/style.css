@@ -1,5 +1,129 @@
-/* ! SA ! */
+@import url("https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap");
 
-body {
-  background-color: yellow;
+:root {
+  --color-dark: #222831;
+  --color-dark-light: #31363f;
+  --color-dark-blue: #76abae;
+  --color-dark-white: #eeeeee;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Open Sans", sans-serif;
+}
+
+.form-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-container form {
+  padding: 2rem 4rem;
+  box-shadow: 5px 5px 10px rgba(49, 54, 63, 0.4); /* ? renk kodu = var(--color-dark-light) */
+  background: var(--color-dark-white);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 45vw;
+  border-radius: 45px;
+}
+
+.social-container {
+  margin: 1rem 0;
+  text-align: center;
+}
+
+.social-container a {
+  border: 2px solid var(--color-dark-light);
+  border-radius: 50%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  margin: 0 5px;
+  height: 50px;
+  width: 50px;
+  color: var(--color-dark-light);
+  font-size: 1.2rem;
+}
+
+.social-container a:hover {
+  border: 2px solid var(--color-dark-blue);
+  transition: 0.2s all ease;
+  color: var(--color-dark-blue);
+}
+
+.form-group {
+  width: 100%;
+  padding: 0.4rem 0;
+  font-size: 1.1rem;
+  border-radius: 10px;
+}
+
+#form-check-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.form-check {
+  width: 50%;
+  vertical-align: middle;
+  display: flex;
+}
+
+.form-check label {
+  width: 100%;
+  margin: 0 0.2rem;
+  vertical-align: middle;
+  display: flex;
+}
+
+.text-link {
+  font-size: 1.1rem;
+  text-decoration: none;
+  text-transform: none;
+  justify-content: end;
+  display: flex;
+  color: var(--color-dark-blue);
+}
+
+.text-link:hover {
+  color: var(--color-dark-light);
+  transition: all 0.3s ease-out;
+  cursor: pointer;
+}
+
+.center-div {
+  text-align: center;
+}
+
+.center-div span,
+.center-div a {
+  display: inline;
+  vertical-align: middle;
+  font-size: 1.1rem;
+}
+
+.button {
+  font-size: 1rem;
+  text-transform: uppercase;
+  text-align: center;
+  color: #fff;
+  border-radius: 20px;
+  padding: 0.9rem 2.8rem;
+  letter-spacing: 1px;
+  background-color: var(--color-dark-blue);
+  transition: transform 80ms ease-in;
+  border: transparent solid 2px;
+}
+
+.button:hover {
+  background-color: var(--color-dark-light);
+  transition: all 0.3s ease-out;
+  cursor: pointer;
 }
