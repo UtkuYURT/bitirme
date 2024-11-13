@@ -40,3 +40,23 @@ def sign_up(email, password):
     cur.execute("INSERT INTO users (email, password) VALUES (%s, %s)", (email, password))
     mysql.connection.commit()
     cur.close()
+    
+def create_files_table():
+    """Dosyalar için bir tablo oluşturur"""
+    with current_app.app_context():
+        cur = mysql.connection.cursor()
+        cur.execute('''CREATE TABLE IF NOT EXISTS files (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            filename VARCHAR(255) NOT NULL,
+            filedata LONGBLOB NOT NULL,
+            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )''')
+        mysql.connection.commit()
+        cur.close()
+
+def save_file(filename, filedata):
+    """Dosyayı veritabanına kaydeder."""
+    cur = mysql.connection.cursor()
+    cur.execute("INSERT INTO files (filename, filedata) VALUES (%s, %s)", (filename, filedata))
+    mysql.connection.commit()
+    cur.close()

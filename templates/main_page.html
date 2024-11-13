@@ -2,8 +2,12 @@
 content %}
 
 <div class="container">
-  <div class="form-container">
-    <form action="{{ url_for('sign_in_route') }}" method="post">
+  <div class="form-container-home">
+    <form
+      action="{{ url_for('upload_file_route') }}"
+      method="post"
+      enctype="multipart/form-data"
+    >
       <div class="row">
         <h2 class="text-center fw-bold">DOSYA YÜKLE</h2>
 
@@ -14,7 +18,7 @@ content %}
             name="e-mail"
             class="form-control"
             placeholder="Dosya seçiniz"
-            require
+            required
           />
         </div>
         <div class="form-group col-3">
@@ -24,6 +28,14 @@ content %}
         </div>
       </div>
     </form>
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %}
+    <ul>
+      {% for category, message in messages %}
+      <li class="alert alert-{{ category }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %} {% endwith %}
   </div>
 </div>
 

@@ -1,21 +1,45 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash
-from db import init_db, sign_up, sign_in
+from db import init_db, sign_up, sign_in, save_file
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = Flask(__name__)
-
 app.secret_key = 'gizli_anahtar'
 
-# ? DB Settings 
+# ? DB Settings
 app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST', 'localhost')
 app.config['MYSQL_USER'] = os.getenv('MYSQL_USER', 'root')
 app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD', 'root')
 app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'bitirme')
 
 init_db(app)
+
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'docx'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload_file_route():
+    if request.method == 'POST':
+        file = request.files.get('file')
+        
+        if not file or file.filename == '':
+            flash('Dosya seçilmedi', 'danger')
+            return redirect(request.url)
+        
+        if file and allowed_file(file.filename):
+            filename = file.filename
+            filedata = file.read()  # Dosyayı binary olarak oku
+            save_file(filename, filedata)  # Veritabanına kaydet
+            flash('Dosya başarıyla yüklendi', 'success')
+            return redirect(url_for('main_page'))
+        else:
+            flash('İzin verilmeyen dosya türü', 'danger')
+            return redirect(request.url)
+    
+    return render_template('main_page.html')
 
 @app.route('/')
 def home():
