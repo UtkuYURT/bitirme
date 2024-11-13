@@ -1,7 +1,36 @@
 from flask import current_app
 from flask_mysqldb import MySQL
+from flask import Flask
 
 mysql = None
+
+def create_database_if_not_exists():
+    cur = mysql.connection.cursor()
+    try:
+        # Geçici olarak mysql veritabanına bağlanıyoruz
+        cur.execute("CREATE DATABASE IF NOT EXISTS bitirme")  
+        mysql.connection.commit()
+    except Exception as e:
+        print(f"Error creating database: {e}")
+    finally:
+        cur.close()
+
+def create_users_table():
+    cur = mysql.connection.cursor()
+    try:
+        # bitirme veritabanını kullanmaya başlıyoruz
+        cur.execute("USE bitirme")
+        cur.execute('''CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(100) NOT NULL UNIQUE,
+            password VARCHAR(100) NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )''')
+        mysql.connection.commit()
+    except Exception as e:
+        print(f"Error creating table: {e}")
+    finally:
+        cur.close()
 
 def init_db(app):
     global mysql
