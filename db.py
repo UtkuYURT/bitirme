@@ -12,7 +12,7 @@ def init_db(app):
 
 def create_database_if_not_exists():
     cur = mysql.connection.cursor()
-    cur.execute("CREATE DATABASE IF NOT EXISTS bitirme")  
+    cur.execute("CREATE SCHEMA IF NOT EXISTS bitirme")  
     mysql.connection.commit()
     cur.close()
 
