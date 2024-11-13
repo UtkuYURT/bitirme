@@ -1,8 +1,9 @@
 {% extends "base.html" %} {% block title %}Giriş Yap{% endblock %} {% block
 content %}
+
 <div class="container">
   <div class="form-container">
-    <form action="#" method="post">
+    <form action="{{ url_for('sign_in_route') }}" method="post">
       <div class="row">
         <h2 class="text-center fw-bold">GIRIS YAP</h2>
 
@@ -17,6 +18,21 @@ content %}
             ><i class="fab fa-linkedin-in"></i
           ></a>
         </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %}
+        <div class="container mt-4">
+          {% for category, message in messages %}
+          <div
+            class="alert alert-{{ category }} alert-dismissible fade show"
+            role="alert"
+          >
+            {{ message }}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %} {% endwith %}
+
         <div class="form-group mt-3 col-12">
           <label for="e-mail" class="form-label">Email</label>
           <input
@@ -73,5 +89,6 @@ content %}
     </form>
   </div>
 </div>
+
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 {% endblock %}
