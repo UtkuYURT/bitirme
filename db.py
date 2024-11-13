@@ -7,7 +7,14 @@ def init_db(app):
     global mysql
     mysql = MySQL(app)
     with app.app_context():
+        create_database_if_not_exists()
         create_users_table()
+
+def create_database_if_not_exists():
+    cur = mysql.connection.cursor()
+    cur.execute("CREATE DATABASE IF NOT EXISTS bitirme")  # bitirme veritabanı yoksa oluşturuluyor
+    mysql.connection.commit()
+    cur.close()
 
 def create_users_table():
     with current_app.app_context():
