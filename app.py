@@ -1,6 +1,6 @@
 import os
 from flask import Flask, render_template, request, redirect, url_for, flash
-from db import init_db, sign_up, sign_in
+from db import init_db, sign_up, sign_in, create_users_table, create_database_if_not_exists
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,6 +14,11 @@ app.config['MYSQL_HOST'] = 'localhost'
 app.config['MYSQL_USER'] = 'root'
 app.config['MYSQL_PASSWORD'] = 'root'
 app.config['MYSQL_DB'] = 'bitirme'
+
+@app.before_first_request
+def initialize_database():
+    create_database_if_not_exists()
+    create_users_table()
 
 init_db(app)
 
