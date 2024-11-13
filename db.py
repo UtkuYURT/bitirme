@@ -1,3 +1,4 @@
+from flask import current_app
 from flask_mysqldb import MySQL
 
 mysql = None
@@ -5,6 +6,18 @@ mysql = None
 def init_db(app):
     global mysql
     mysql = MySQL(app)
+    with app.app_context():
+        create_users_table()
+
+def create_users_table():
+    with current_app.app_context():
+        cur = mysql.connection.cursor()
+        cur.execute('''CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(100) NOT NULL,
+            password VARCHAR(50) NOT NULL)''')
+        mysql.connection.commit()
+        cur.close()
 
 def sign_in(email, password):
     cur = mysql.connection.cursor()
