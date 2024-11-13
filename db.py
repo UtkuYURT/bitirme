@@ -12,13 +12,14 @@ def init_db(app):
 
 def create_database_if_not_exists():
     cur = mysql.connection.cursor()
-    cur.execute("CREATE DATABASE IF NOT EXISTS bitirme")  # bitirme veritabanı yoksa oluşturuluyor
+    cur.execute("CREATE DATABASE IF NOT EXISTS bitirme")  
     mysql.connection.commit()
     cur.close()
 
 def create_users_table():
     with current_app.app_context():
         cur = mysql.connection.cursor()
+        cur.execute("USE bitirme")
         cur.execute('''CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
         email VARCHAR(100) NOT NULL UNIQUE,
