@@ -13,9 +13,11 @@ def create_users_table():
     with current_app.app_context():
         cur = mysql.connection.cursor()
         cur.execute('''CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            email VARCHAR(100) NOT NULL,
-            password VARCHAR(50) NOT NULL)''')
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        email VARCHAR(100) NOT NULL UNIQUE,
+        password VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )''')
         mysql.connection.commit()
         cur.close()
 
