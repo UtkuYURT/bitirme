@@ -2,7 +2,29 @@
 content %}
 
 <div class="container">
-  <p class="lead">ANA SAYFA</p>
+  <div class="form-container">
+    <form action="{{ url_for('sign_in_route') }}" method="post">
+      <div class="row">
+        <h2 class="text-center fw-bold">DOSYA YÜKLE</h2>
+
+        <div class="form-group col-9">
+          <!-- <label for="e-mail" class="form-label">Dosya Seç</label> -->
+          <input
+            type="file"
+            name="e-mail"
+            class="form-control"
+            placeholder="Dosya seçiniz"
+            require
+          />
+        </div>
+        <div class="form-group col-3">
+          <button type="submit" class="col-4 btn btn-primary w-100">
+            Giris Yap
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
 </div>
 
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
