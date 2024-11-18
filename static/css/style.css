@@ -25,6 +25,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: margin-top 0.5s ease-in-out; /* Formun yukarı kayması için geçiş */
 }
 .form-container form {
   padding: 2rem 4rem;
@@ -148,4 +149,29 @@
   background-color: var(--color-dark-light);
   transition: all 0.3s ease-out;
   cursor: pointer;
+}
+/* Uyarı mesajları için stil */
+.alert-container {
+  position: absolute;
+  top: 20px;  /* Ekranın üstünden 10px yukarıda */
+  left: 50%;   /* Yatayda ortala */
+  transform: translateX(-50%);  /* Ortalamayı düzgün yapmak için */
+  width: 80%;  /* Uyarı mesajlarının genişliği */
+  z-index: 1050;  /* Diğer içeriklerin önünde gösterilsin */
+  transition: opacity 0.5s ease-in-out; /* Kaybolma animasyonu */
+ }
+/* Madde işaretini kaldırmak için */
+.alert-container ul {
+  list-style-type: none;  /* Madde işaretini kaldırır */
+  padding: 0;  /* Liste elemanlarının sol iç boşluğunu kaldırır */
+  margin: 0;   /* Liste etrafındaki dış boşluğu kaldırır */
+}
+.alert {
+  padding: 15px;
+  border-radius: 20px;
+  font-size: 16px;
+}
+.alert-danger {
+  background-color: #dc3545;
+  color: white;
 }
