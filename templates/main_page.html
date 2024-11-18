@@ -12,29 +12,32 @@ content %}
         <h2 class="text-center fw-bold">DOSYA YÜKLE</h2>
 
         <div class="form-group col-9">
-          <!-- <label for="e-mail" class="form-label">Dosya Seç</label> -->
           <input
             type="file"
-            name="e-mail"
+            id="file"
+            name="file"
             class="form-control"
-            placeholder="Dosya seçiniz"
             required
           />
         </div>
+
         <div class="form-group col-3">
           <button type="submit" class="col-4 btn btn-primary w-100">
-            Giris Yap
+            Yükle
           </button>
         </div>
       </div>
     </form>
+
     {% with messages = get_flashed_messages(with_categories=true) %} {% if
     messages %}
-    <ul>
-      {% for category, message in messages %}
-      <li class="alert alert-{{ category }}">{{ message }}</li>
-      {% endfor %}
-    </ul>
+    <div class="alert-container">
+      <ul>
+        {% for category, message in messages %}
+        <li class="alert alert-{{ category }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    </div>
     {% endif %} {% endwith %}
   </div>
 </div>

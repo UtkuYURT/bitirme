@@ -1,98 +1,64 @@
-from flask import current_app
-from flask_mysqldb import MySQL
-from flask import Flask
+import pyodbc
+import datetime
+# MSSQL bağlantısı için global bir değişken
+connection = None
 
-mysql = None
+getdate=datetime.datetime.now()
 
-def create_database_if_not_exists():
-    cur = mysql.connection.cursor()
-    try:
-        cur.execute("CREATE DATABASE IF NOT EXISTS bitirme")  
-        mysql.connection.commit()
-    except Exception as e:
-        print(f"Error creating database: {e}")
-    finally:
-        cur.close()
-
-def create_users_table():
-    cur = mysql.connection.cursor()
-    try:
-        cur.execute("USE bitirme")
-        cur.execute('''CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            email VARCHAR(100) NOT NULL UNIQUE,
-            password VARCHAR(100) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )''')
-        mysql.connection.commit()
-    except Exception as e:
-        print(f"Error creating table: {e}")
-    finally:
-        cur.close()
-
-def init_db(app):
-    global mysql
-    mysql = MySQL(app)
-    with app.app_context():
-        create_database_if_not_exists()
-        create_users_table()
-
-def create_database_if_not_exists():
-    cur = mysql.connection.cursor()
-    try:
-        cur.execute("CREATE DATABASE IF NOT EXISTS bitirme")  
-        mysql.connection.commit()
-    except Exception as e:
-        print(f"Error creating database: {e}")
-    finally:
-        cur.close()
-
-def create_users_table():
-    cur = mysql.connection.cursor()
-    try:
-        # bitirme veritabanını kullanmaya başlıyoruz
-        cur.execute("USE bitirme")
-        cur.execute('''CREATE TABLE IF NOT EXISTS users (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            email VARCHAR(100) NOT NULL UNIQUE,
-            password VARCHAR(100) NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )''')
-        mysql.connection.commit()
-    except Exception as e:
-        print(f"Error creating table: {e}")
-    finally:
-        cur.close()
+def init_db(config):
+    """Veritabanı bağlantısını başlatır."""
+    global connection
+    connection_str = (
+        f"DRIVER={config['DRIVER']};"
+        f"SERVER={config['SERVER']};"
+        f"DATABASE={config['DATABASE']};"
+        f"UID={config['UID']};"
+        f"PWD={config['PWD']}"
+    )
+    connection = pyodbc.connect(connection_str)
 
 def sign_in(email, password):
-    cur = mysql.connection.cursor()
-    cur.execute("SELECT * FROM users WHERE email = %s AND password = %s", (email, password))
-    user = cur.fetchone()
-    cur.close()
-    return user
-
-def sign_up(email, password):
-    cur = mysql.connection.cursor()
-    cur.execute("INSERT INTO users (email, password) VALUES (%s, %s)", (email, password))
-    mysql.connection.commit()
-    cur.close()
-    
-def create_files_table():
-    """Dosyalar için bir tablo oluşturur"""
-    with current_app.app_context():
-        cur = mysql.connection.cursor()
-        cur.execute('''CREATE TABLE IF NOT EXISTS files (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            filename VARCHAR(255) NOT NULL,
-            filedata LONGBLOB NOT NULL,
-            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )''')
-        mysql.connection.commit()
+    """Kullanıcı girişini kontrol eder."""
+    cur = connection.cursor()
+    try:
+        # Call the stored procedure Kullanici_Giris
+        cur.execute("EXEC Kullanici_Giris @email=?, @password=?", (email, password))
+        
+        # Fetch the result
+        result = cur.fetchone()
+        
+        # Check if login is successful (Result = 1)
+        if result and result[0] == 1:
+            print("Login successful")
+            return result  # Return the full user data (email, password)
+        else:
+            print("Login failed")
+            return False
+    except Exception as e:
+        print(f"Error in sign_in: {e}")
+        return None
+    finally:
         cur.close()
+
+
+def sign_up(email, password):    
+    cur = connection.cursor()
+    try:     
+        cur.execute("EXEC Kullanici_Kayit @email=?, @password=?", (email, password))
+        connection.commit()
+    except Exception as e:
+        print(f"Error in sign_up: {e}")
+    finally:
+        cur.close()
+
 
 def save_file(filename, filedata):
     """Dosyayı veritabanına kaydeder."""
-    cur = mysql.connection.cursor()
-    cur.execute("INSERT INTO files (filename, filedata) VALUES (%s, %s)", (filename, filedata))
-    mysql.connection.commit()
-    cur.close()
+    cur = connection.cursor()
+    try:
+        cur.execute("EXEC Dosya_Kayit @filename=?, @filedata=?", (filename, filedata))
+        connection.commit() 
+    except Exception as e:
+        print(f"Error saving file: {e}")
+    finally:
+        cur.close()
