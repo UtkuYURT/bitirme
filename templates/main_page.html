@@ -9,8 +9,7 @@ content %}
       enctype="multipart/form-data"
     >
       <div class="row">
-        <h2 class="text-center fw-bold">DOSYA YÜKLE</h2>
-
+        <h2 class="text-center fw-bold">Dosya Yükle</h2>
         <div class="form-group col-9">
           <input
             type="file"
@@ -20,7 +19,6 @@ content %}
             required
           />
         </div>
-
         <div class="form-group col-3">
           <button type="submit" class="col-4 btn btn-primary w-100">
             Yükle
@@ -40,7 +38,32 @@ content %}
     </div>
     {% endif %} {% endwith %}
   </div>
+
+  <div class="mt-5">
+    <h2 class="text-center fw-bold">Son Yüklenen Dosya</h2>
+
+    {% if last_file %}
+    <p><strong>Dosya Adı:</strong> {{ last_file.filename }}</p>
+
+    {% if last_file.filename.endswith('.pdf') %}
+    <!-- PDF dosyasını tarayıcıda görüntüleme -->
+    <object
+      data="{{ url_for('get_latest_file') }}"
+      type="application/pdf"
+      width="100%"
+      height="600px"
+    >
+      Tarayıcınız PDF görüntülemeyi desteklemiyor.
+    </object>
+    {% else %}
+    <p>Dosya türü: {{ last_file.filename }}</p>
+    <p>Bu dosya PDF değil, dolayısıyla görüntülenemez.</p>
+    {% endif %} {% else %}
+    <p>Henüz bir dosya yüklenmemiş.</p>
+    {% endif %}
+  </div>
 </div>
 
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
 {% endblock %}
