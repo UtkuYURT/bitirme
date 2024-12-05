@@ -14,7 +14,7 @@ app.secret_key = 'gizli_anahtar'
 # MSSQL DB Settings
 DATABASE_CONFIG = {
     'DRIVER': '{ODBC Driver 17 for SQL Server}',
-    'SERVER': '172.19.65.203',  # Server IP
+    'SERVER': '192.168.1.168',  # Server IP
     'DATABASE': 'deneme',
     'UID': 'sa',  # Kullanıcı adı
     'PWD': 'Deneme'  # Şifre
