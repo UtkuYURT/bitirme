@@ -1,0 +1,74 @@
+<link rel="stylesheet" href="../static/css/sidebar.css" />
+
+<div class="p-3 bg-dark" id="sidebar">
+  <div class="toggle-sidebar">
+    <a
+      href="#"
+      class="d-flex pb-3 mb-3 text-decoration-none border-bottom"
+      id="sidebar-control"
+    >
+      <i class="fa-solid fa-bars p-1" id="bar-i"></i>
+      <span class="fs-5 fw-semibold" id="logo-name">Web App</span>
+    </a>
+  </div>
+
+  <ul class="list-unstyled" id="sidebar-list">
+    <li>
+      <button
+        class="btn btn-toggle rounded text-white toggle-button"
+        data-bs-toggle="collapse"
+        data-bs-target="#collapse1"
+        aria-expanded="false"
+        onclick="document.getElementById('fileInput').click();"
+      >
+        <span class="name">Dosya Yükle</span>
+      </button>
+      <input type="file" id="fileInput" style="display: none" />
+    </li>
+
+    <li>
+      <button
+        class="btn btn-toggle rounded collapsed text-white toggle-button"
+        data-bs-toggle="collapse"
+        data-bs-target="#collapse2"
+        aria-expanded="false"
+      >
+        <span class="name">Dosya Sil</span>
+      </button>
+    </li>
+
+    <li>
+      <button
+        class="btn btn-toggle rounded collapsed text-white toggle-button"
+        data-bs-toggle="collapse"
+        data-bs-target="#collapse3"
+        aria-expanded="false"
+      >
+        <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        <span class="name">Analiz</span>
+      </button>
+      <div class="collapse" id="collapse3">
+        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+          <li>
+            <a href="#" class="rounded">SPSS</a>
+          </li>
+        </ul>
+      </div>
+    </li>
+
+    <li>
+      <button
+        class="btn btn-toggle rounded collapsed text-white toggle-button"
+        data-bs-toggle="collapse"
+        data-bs-target="#collapse13"
+        aria-expanded="false"
+        id="logout-button"
+      >
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        <span class="name">Çıkış Yap</span>
+      </button>
+    </li>
+  </ul>
+
+  <script src="../static/js/sidebar.js"></script>
+</div>

@@ -1,9 +1,7 @@
-{% extends "base.html" %} {% block title %}Ana Sayfa{% endblock %} {% block
-content %}
+{% extends "partials/base.html" %} {% block title %}Ana Sayfa{% endblock %}
+{%block content %} {% include "partials/sidebar.html" %}
 
-<div class="container">
-  <p class="lead">ANA SAYFA</p>
-</div>
+<div class="container"></div>
 
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 {% endblock %}
