@@ -137,6 +137,22 @@
   padding-left: 8vw;
 }
 
+/* * alert css */
+#file_div .alert {
+  width: 100%;
+  max-width: 800px;
+  margin: 1rem;
+}
+
+.fade {
+  opacity: 0;
+  transition: opacity 0.5s ease-out;
+}
+.show {
+  opacity: 1;
+}
+/* * alert css */
+
 .card.file-upload-card {
   margin: 1rem;
   padding: 1rem;
@@ -179,6 +195,18 @@ button.btn-file:hover {
   transition: all 0.3s ease-out;
   cursor: pointer;
   color: var(--color-dark-white);
+}
+
+button.btn-remove {
+  color: var(--color-dark-blue);
+  transition: transform 80ms ease-in;
+  padding: 0;
+}
+
+button.btn-remove:hover {
+  transition: all 0.3s ease-out;
+  cursor: pointer;
+  color: var(--color-dark-light);
 }
 
 @media screen and (max-width: 768px) {

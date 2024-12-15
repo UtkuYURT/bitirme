@@ -36,3 +36,9 @@ def get_files (user_id):
     cur.close()
     return files
 
+def delete_files (user_id, file_name):
+    cur = mysql.connection.cursor()
+    cur.execute("DELETE FROM user_files WHERE user_id = %s and file_name = %s", (user_id, file_name))
+    mysql.connection.commit()
+    cur.close()
+
