@@ -1,0 +1,50 @@
+{% extends "partials/base.html" %} {% set show_sidebar = true %} {% block title
+%}Dosya İşlemleri{% endblock %} {% block content %}
+
+<div id="file_div">
+  <div class="card file-upload-card">
+    <div class="card-title">
+      <h3 class="text-center fw-bold">DOSYA YÜKLE</h3>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <form action="/upload" method="POST" enctype="multipart/form-data">
+          <div class="form-group file-upload-card-buttons flex-md-row">
+            <input
+              type="file"
+              name="file"
+              id="fileInput"
+              required
+              class="form-control btn-file-selection"
+            />
+            <button class="btn btn-file" type="submit">
+              <span class="name">Dosyayı Kaydet</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="file_div">
+  <div class="card file-upload-card">
+    <div class="card-title">
+      <h3 class="text-center fw-bold">DOSYA İŞLEMLERİ</h3>
+    </div>
+    <div class="card-body">
+      <ul id="fileList" class="list-group mt-3">
+        {% if files %} {% for file in files %}
+        <li class="list-group-item">
+          <strong>{{ file[0] }}</strong> (Yüklenme Tarihi: {{ file[1] }})
+        </li>
+        {% endfor %} {% else %}
+        <p class="text-center">Henüz yüklediğiniz dosya bulunmamaktadır.</p>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% endblock %}

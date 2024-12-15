@@ -1,4 +1,5 @@
 from flask_mysqldb import MySQL
+from datetime import datetime 
 
 mysql = None
 
@@ -18,3 +19,20 @@ def sign_up(email, password):
     cur.execute("INSERT INTO users (email, password) VALUES (%s, %s)", (email, password))
     mysql.connection.commit()
     cur.close()
+
+def save_files (user_id ,file_name):
+    cur = mysql.connection.cursor()
+    cur.execute(
+        "INSERT INTO user_files (user_id, file_name, uploaded_at) VALUES (%s, %s, %s)",
+        (user_id, file_name, datetime.now())
+    )
+    mysql.connection.commit()
+    cur.close()
+
+def get_files (user_id):
+    cur = mysql.connection.cursor()
+    cur.execute("SELECT file_name, uploaded_at FROM user_files WHERE user_id = %s", (user_id,))
+    files = cur.fetchall()
+    cur.close()
+    return files
+

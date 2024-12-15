@@ -1,5 +1,5 @@
-{% extends "partials/base.html" %} {% block title %}Kayıt Ol{% endblock %} {%
-block content %}
+{% extends "partials/base.html" %} {% set show_sidebar = false %} {% block title
+%}Kayıt Ol{% endblock %} {% block content %}
 <div class="container">
   <div class="form-container">
     <form action="{{ url_for('sign_up_route') }}" method="post">

@@ -150,9 +150,9 @@
   cursor: pointer;
 }
 
-@media screen and (max-width: 1024px) {
-  #sidebar {
-    width: 35vw;
+@media screen and (max-width: 768px) {
+  /* #sidebar {
+    width: 20vw;
   }
 
   #bar-i {
@@ -176,7 +176,57 @@
   }
 
   #sidebar.close {
-    width: 10vw;
+    width: 7vw;
+  }
+
+  #sidebar.close .btn-toggle-nav a {
+    margin: 0.6rem;
+    padding: 0.1rem;
+  }
+
+  #sidebar.close .collapse.show a {
+    padding: 0.2rem 0.6rem;
+  } */
+
+  #file_div {
+    padding-left: 15vw;
+  }
+
+  .card.file-upload-card {
+    margin: 0.3rem 1rem;
+    padding: 0.5rem;
+    width: 100%;
+    max-width: 500px;
+  }
+}
+
+@media screen and (max-width: 1024px) {
+  #sidebar {
+    width: 22vw;
+  }
+
+  #bar-i {
+    font-size: 1rem;
+    line-height: 2rem;
+  }
+
+  #logo-name {
+    font-size: 1rem;
+  }
+
+  .toggle-button i,
+  .toggle-button span {
+    font-size: 0.9rem;
+  }
+
+  #sidebar .btn-toggle-nav a {
+    margin: 0.6rem 0 0.6rem 1.8rem;
+    padding: 0.1rem 0 0.1rem 0.2rem;
+    font-size: 0.8rem;
+  }
+
+  #sidebar.close {
+    width: 7vw;
   }
 
   #sidebar.close .btn-toggle-nav a {
@@ -187,11 +237,18 @@
   #sidebar.close .collapse.show a {
     padding: 0.2rem 0.6rem;
   }
+
+  .card.file-upload-card {
+    margin: 0.3rem 1rem;
+    padding: 0.5rem;
+    width: 100%;
+    max-width: 500px;
+  }
 }
 
 @media (min-width: 1024px) and (max-width: 1535px) {
   #sidebar {
-    width: 30vw;
+    width: 20vw;
   }
 
   #bar-i {
@@ -213,7 +270,7 @@
   }
 
   #sidebar.close {
-    width: 7vw;
+    width: 6vw;
   }
 
   #sidebar.close .btn-toggle-nav a {
@@ -223,5 +280,12 @@
 
   #sidebar.close .collapse.show a {
     padding: 0.2rem 0.6rem;
+  }
+
+  .card.file-upload-card {
+    margin: 0.5rem 1rem;
+    padding: 0.8rem;
+    width: 100%;
+    max-width: 600px;
   }
 }

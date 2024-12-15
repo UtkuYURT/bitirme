@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
-from db import init_db, sign_up, sign_in
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from db import init_db, sign_up, sign_in, save_files, get_files
 
 app = Flask(__name__)
 
@@ -24,6 +24,7 @@ def sign_in_route():
         password = request.form['sifre']
         user = sign_in(email, password)
         if user:
+            session['user_id'] = user[0]
             flash("Giriş Başarılı", "success") 
             return redirect(url_for('main_page')) 
         else:
@@ -46,11 +47,38 @@ def sign_up_route():
             return redirect(url_for('home')) 
         else:
             flash("Kayıt Başarısız", "danger")
-            return redirect(url_for('register'))  
+            return redirect(url_for('register'))
 
 @app.route('/main_page')
 def main_page():
-    return render_template('main_page.html')
+    return render_template('main_page.html', show_sidebar=False)
+
+@app.route('/file_operations')
+def file_operations():
+    user_id = session.get('user_id')
+    if user_id:
+        files = get_files(user_id) 
+        return render_template("file_operations.html", files=files)
+    else:
+        flash("Kullanıcı bulunamadı", "danger")
+        return redirect(url_for("/"))
+
+@app.route('/upload', methods=['POST'])
+def upload_file():
+    if request.method == 'POST':
+        user_id = session.get('user_id')
+        if user_id:
+            file = request.files.get('file')
+            if file or file.filename != "":
+                filename = file.filename
+                save_files(user_id ,filename)
+                return redirect(url_for('file_operations'))
+            else:
+                flash("Dosya seçilemedi", "danger");
+                return redirect(url_for('file_operations'))
+        else:
+            flash("Kullanıcı bulunamadı", "danger")
+            return redirect(url_for("/"))
 
 if __name__ == '__main__':
     app.run(debug=True)

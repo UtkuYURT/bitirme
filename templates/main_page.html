@@ -1,7 +1,2 @@
-{% extends "partials/base.html" %} {% block title %}Ana Sayfa{% endblock %}
-{%block content %} {% include "partials/sidebar.html" %}
-
-<div class="container"></div>
-
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
-{% endblock %}
+{% extends "partials/base.html" %} {% set show_sidebar = true %} {% block title
+%} Ana Sayfa {% endblock %} {% block content %} {% endblock %}
