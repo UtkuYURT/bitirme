@@ -55,7 +55,12 @@
         <li
           class="list-group-item d-flex justify-content-between align-items-center"
         >
-          <strong>{{ file[0] }}</strong>
+          <a
+            href="{{ url_for('view_file', file_name=file[0]) }}"
+            class="text-decoration-none btn-data"
+          >
+            <strong>{{ file[0] }}</strong>
+          </a>
           <form action="/delete_file" method="POST" style="margin: 0">
             <input type="hidden" name="file_name" value="{{ file[0] }}" />
             <button type="submit" class="btn btn-remove">

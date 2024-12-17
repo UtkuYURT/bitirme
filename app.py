@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session
-from db import init_db, sign_up, sign_in, save_files, get_files, delete_files
+from db import init_db, sign_up, sign_in, save_files, get_files, delete_files, get_file_data
+import pandas as pd
+import os
 
 app = Flask(__name__)
 
@@ -25,7 +27,7 @@ def sign_in_route():
         user = sign_in(email, password)
         if user:
             session['user_id'] = user[0]
-            return redirect(url_for('main_page')) 
+            return redirect(url_for('file_operations')) 
         else:
             flash("Giriş Başarısız", "login_danger")
             return redirect(url_for('home')) 
@@ -47,10 +49,6 @@ def sign_up_route():
         else:
             flash("Kayıt Başarısız", "login_danger")
             return redirect(url_for('register'))
-
-@app.route('/main_page')
-def main_page():
-    return render_template('main_page.html', show_sidebar=False)
 
 @app.route('/file_operations')
 def file_operations():
@@ -74,7 +72,8 @@ def upload_file():
             file = request.files.get('file')
             if file and allowed_file(file.filename): 
                 filename = file.filename
-                save_files(user_id, filename)
+                file_content = file.read()
+                save_files(user_id, filename, file_content)
                 flash("Dosya başarıyla kaydedildi", "file_success")
                 return redirect(url_for('file_operations'))
             else:
@@ -87,12 +86,12 @@ def upload_file():
 @app.route('/delete_file', methods=['POST'])
 def delete_file():
     if request.method == 'POST':
-        user_id = session.get('user_id')  # Kullanıcının oturumu kontrol ediliyor
+        user_id = session.get('user_id')
         if user_id:
-            file_name = request.form.get('file_name')  # Formdan dosya adını alıyoruz
-            if file_name:  # Dosya adı geçerliyse
+            file_name = request.form.get('file_name') 
+            if file_name:
                 try:
-                    delete_files(user_id, file_name)  # Veritabanından dosyayı sil
+                    delete_files(user_id, file_name)
                     flash(f"'{file_name}' dosyası başarıyla silindi.", "file_success")
                 except Exception as e:
                     flash(f"Bir hata oluştu: {str(e)}", "danger")
@@ -100,8 +99,31 @@ def delete_file():
                 flash("Silmek için geçerli bir dosya adı alınamadı.", "file_danger")
         else:
             flash("Kullanıcı bulunamadı. Lütfen tekrar giriş yapın.", "file_danger")
-
     return redirect(url_for('file_operations'))
 
+@app.route('/main_page/<file_name>', methods=['GET'])
+def view_file(file_name):
+    user_id = session.get('user_id')
+    
+    if user_id:
+        file_extension = os.path.splitext(file_name)[1].lower()
+
+        file_content = None
+        if file_extension == '.xlsx':
+            file_content = get_file_data(user_id, file_name, file_type='xlsx')
+        elif file_extension == '.csv':
+            file_content = get_file_data(user_id, file_name, file_type='csv')
+
+        if file_content is not None and isinstance(file_content, pd.DataFrame):
+            if not file_content.empty:
+                table_html = file_content.to_html(classes='table table-striped table-bordered', index=False)
+                return render_template('main_page.html', file_name=file_name, content=table_html)
+            else:
+                flash("Dosya boş", "file_danger")
+        else:
+            flash("Dosya bulunamadı veya içerik mevcut değil", "file_danger")
+    else:
+        flash("Kullanıcı giriş yapmamış", "file_danger")
+    
 if __name__ == '__main__':
     app.run(debug=True)

@@ -209,6 +209,22 @@ button.btn-remove:hover {
   color: var(--color-dark-light);
 }
 
+.btn-data {
+  color: var(--color-dark-light);
+  transition: transform 80ms ease-in;
+}
+
+.btn-data:hover {
+  transition: all 0.3s ease-out;
+  cursor: pointer;
+  color: var(--color-dark-blue);
+}
+
+.btn-file a {
+  color: var(--color-dark-white);
+  text-decoration: none;
+}
+
 @media screen and (max-width: 768px) {
   #file_div {
     padding-left: 15vw;
