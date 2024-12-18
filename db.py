@@ -3,6 +3,7 @@ from datetime import datetime
 import pandas as pd
 import io
 
+
 mysql = None
 
 def init_db(app):
@@ -77,5 +78,46 @@ def get_file_data(user_id, file_name, file_type=None):
             except Exception as e:
                 return f"CSV dosyası okuma hatası: {e}"
 
-    return None
+def uptade_table_data(user_id, file_name, updated_data, file_type='xlsx'):
+    # Mevcut dosya içeriğini al
+    file_type = file_name.rsplit('.', 1)[1].lower()
+    file_content = get_file_data(user_id, file_name, file_type)
+    
+    if isinstance(file_content, str):  # Hata mesajı geldi mi?
+        return file_content
+
+    # Güncellenen verileri işle
+    for update in updated_data:
+        row_index = int(update['row_index'])  # Satır indexini al
+        column_name = update['column_name']  # Sütun adını al
+        new_value = update['new_value']  # Yeni değeri al
+
+        # Veriyi güncelle
+        if row_index < len(file_content) and column_name in file_content.columns:
+            file_content.at[row_index, column_name] = new_value
+        else:
+            return "Geçersiz satır veya sütun adı."
+
+    # Güncellenmiş veriyi byte formatına çevir
+    output = io.BytesIO()
+    if file_type == 'xlsx':
+        file_content.to_excel(output, index=False, engine='openpyxl')
+    elif file_type == 'csv':
+        file_content.to_csv(output, index=False, encoding='utf-8')
+
+    # Veriyi veritabanına kaydet
+    file_byte_data = output.getvalue()
+
+    cur = mysql.connection.cursor()
+    try:
+        cur.execute("UPDATE user_files SET file_content = %s WHERE user_id = %s AND file_name = %s",
+                    (file_byte_data, user_id, file_name))
+    except Exception as e:
+        return f"Dosya güncelleme hatası: {str(e)}"
+
+    mysql.connection.commit()
+    cur.close()
+    return "Dosya başarıyla güncellendi."
+
+
 

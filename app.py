@@ -1,5 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
-from db import init_db, sign_up, sign_in, save_files, get_files, delete_files, get_file_data
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from db import init_db, sign_up, sign_in, save_files, get_files, delete_files, get_file_data, uptade_table_data
 import pandas as pd
 import os
 
@@ -101,29 +101,70 @@ def delete_file():
             flash("Kullanıcı bulunamadı. Lütfen tekrar giriş yapın.", "file_danger")
     return redirect(url_for('file_operations'))
 
-@app.route('/main_page/<file_name>', methods=['GET'])
+def generate_editable_table(df):
+    table_html = '<table class="table table-bordered table-hover" id="editable-table">'
+    
+    # Başlıkları ekle
+    table_html += '<thead><tr>'
+    for col in df.columns:
+        table_html += f'<th>{col}</th>'
+    table_html += '</tr></thead>'
+    
+    # Satırları ekle
+    table_html += '<tbody>'
+    for i, row in df.iterrows():
+        table_html += '<tr>'
+        for col in df.columns:
+            # contenteditable özelliği ile hücreyi düzenlenebilir hale getir
+            table_html += f'<td contenteditable="true" data-column="{col}" data-row="{i}">{row[col]}</td>'
+        table_html += '</tr>'
+    table_html += '</tbody></table>'
+    
+    return table_html
+
+@app.route('/main_page')
+def main_page():
+    # Burada, dosya içeriğini ve diğer verileri yükleyebilirsiniz
+    return render_template('main_page.html')
+
+@app.route('/main_page/<file_name>', methods=['GET', 'POST'])
 def view_file(file_name):
     user_id = session.get('user_id')
-    
-    if user_id:
+
+    if not user_id:
+        flash("Kullanıcı giriş yapmamış", "file_danger")
+        return redirect(url_for('login'))  # Kullanıcıyı giriş sayfasına yönlendir
+
+    if request.method == 'GET':
         file_extension = os.path.splitext(file_name)[1].lower()
 
-        file_content = None
         if file_extension == '.xlsx':
             file_content = get_file_data(user_id, file_name, file_type='xlsx')
-        elif file_extension == '.csv':
+        else:
             file_content = get_file_data(user_id, file_name, file_type='csv')
 
         if file_content is not None and isinstance(file_content, pd.DataFrame):
             if not file_content.empty:
-                table_html = file_content.to_html(classes='table table-striped table-bordered', index=False)
+                table_html = generate_editable_table(file_content)
                 return render_template('main_page.html', file_name=file_name, content=table_html)
             else:
                 flash("Dosya boş", "file_danger")
         else:
             flash("Dosya bulunamadı veya içerik mevcut değil", "file_danger")
+        
+        return redirect(url_for('main_page'))  # Boş dosya durumu için ana sayfaya yönlendirme
+
     else:
-        flash("Kullanıcı giriş yapmamış", "file_danger")
-    
+        data = request.get_json()
+        updated_data = data.get('updated_data')
+
+        try:
+            uptade_table_data(user_id, file_name, updated_data)  # Veritabanını güncelle
+            flash("Dosya kaydedilmesi başarılı", "file_success")
+            return jsonify({"success": True, "message": "Veriler başarıyla güncellendi."})
+        except Exception as e:
+            flash("Dosya kaydedilemedi", "file_danger")
+            return jsonify({"success": False, "message": f"Hata: {str(e)}"})
+
 if __name__ == '__main__':
     app.run(debug=True)
