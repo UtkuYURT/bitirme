@@ -15,8 +15,8 @@ app.config['MYSQL_DB'] = 'bitirme'
 
 init_db(app)
 
+create_database()
 with app.app_context():
-    create_database()
     create_tables()
 
 @app.route('/')

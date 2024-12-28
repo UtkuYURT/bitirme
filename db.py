@@ -14,23 +14,29 @@ from flask_mysqldb import MySQL
 
 mysql = MySQL()
 
+import MySQLdb
+
 def create_database():
     """
     Veritabanını oluşturur. Veritabanı mevcutsa hata vermez.
     """
     try:
-        conn = mysql.connect
+        # Sadece MySQL sunucusuna bağlan
+        conn = MySQLdb.connect(
+            host='localhost',
+            user='root',       # Kullanıcı adınızı yazın
+            passwd='root'      # Şifrenizi yazın
+        )
         cur = conn.cursor()
-        
+
         # Veritabanını oluştur
         cur.execute("CREATE DATABASE IF NOT EXISTS bitirme")
         print("Veritabanı başarıyla oluşturuldu veya zaten mevcut.")
         
         cur.close()
-        conn.commit()
+        conn.close()
     except Exception as e:
         print(f"Veritabanı oluşturulurken hata oluştu: {e}")
-
 
 def create_tables():
     """
