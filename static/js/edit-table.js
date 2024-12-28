@@ -13,9 +13,9 @@ document.addEventListener("DOMContentLoaded", function () {
         const rowIndex = event.target.getAttribute("data-row");
 
         // ! Kontrol
-        console.log(
-          `Row Index: ${rowIndex}, Column Name: ${columnName}, New Value: ${updatedValue}`
-        );
+        // console.log(
+        //   `Row Index: ${rowIndex}, Column Name: ${columnName}, New Value: ${updatedValue}`
+        // );
 
         let updatedData = [];
 

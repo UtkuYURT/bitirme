@@ -105,8 +105,12 @@ def delete_file():
             flash("Kullanıcı bulunamadı. Lütfen tekrar giriş yapın.", "file_danger")
     return redirect(url_for('file_operations'))
 
+@app.route('/main_page')
+def main_page():
+    return render_template('main_page.html')
+
 def generate_editable_table(df):
-    table_html = '<table class="table table-bordered table-hover" id="editable-table">'
+    table_html = '<table class="table table-bordered table-hover table-striped" id="editable-table">'
 
     table_html += '<thead><tr>'
     for col in df.columns:
@@ -122,10 +126,6 @@ def generate_editable_table(df):
     table_html += '</tbody></table>'
 
     return table_html
-
-@app.route('/main_page')
-def main_page():
-    return render_template('main_page.html')
 
 @app.route('/main_page/<file_name>', methods=['GET', 'POST'])
 def view_file(file_name):
@@ -165,6 +165,55 @@ def view_file(file_name):
         except Exception as e:
             flash("Dosya kaydedilemedi", "file_danger")
             return jsonify({"success": False, "message": f"Hata: {str(e)}"})
+
+@app.route('/analysis_processes')
+def analysis_page():
+    return render_template('analysis.html')
+
+def generate_table(df):
+    table_html = '<table class="table table-bordered table-hover table-striped" id="analysis-table">'
+
+    table_html += '<thead><tr>'
+    for col in df.columns:
+        table_html += f'<th class="analysis-header">{col}</th>'
+    table_html += '</tr></thead>'
+    
+    table_html += '<tbody>'
+    for i, row in df.iterrows():
+        table_html += f'<tr data-row="{i}">' 
+        for col in df.columns:
+            table_html += f'<td class="analysis-cell">{row[col]}</td>'
+        table_html += '</tr>'
+    table_html += '</tbody></table>'
+
+    return table_html
+
+@app.route('/analysis_processes/<file_name>', methods=['GET', 'POST'])
+def analysis(file_name):
+    user_id = session.get('user_id')
+
+    if not user_id:
+        flash("Kullanıcı giriş yapmamış", "file_danger")
+        return redirect(url_for('login'))
+
+    if request.method == 'GET':
+        file_extension = os.path.splitext(file_name)[1].lower()
+
+        if file_extension == '.xlsx':
+            file_content = get_file_data(user_id, file_name, file_type='xlsx')
+        else:
+            file_content = get_file_data(user_id, file_name, file_type='csv')
+
+        if file_content is not None and isinstance(file_content, pd.DataFrame):
+            if not file_content.empty:
+                table_html = generate_table(file_content)
+                return render_template('analysis.html', file_name=file_name, content=table_html)
+            else:
+                flash("Dosya boş", "file_danger")
+        else:
+            flash("Dosya bulunamadı veya içerik mevcut değil", "file_danger")
+        
+        return redirect(url_for('analysis_page')) 
 
 if __name__ == '__main__':
     app.run(debug=True)

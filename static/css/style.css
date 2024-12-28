@@ -240,3 +240,7 @@ button.btn-remove:hover {
     margin-top: 0.8rem;
   }
 }
+
+.analysis-cell.selected {
+  border: 3px solid var(--color-dark-blue);
+}
