@@ -11,46 +11,35 @@ def init_db(app):
     mysql = MySQL(app)
 
 def initialize_database():
-    cur = mysql.connection.cursor()
-    
-    # Veritabanını kontrol et ve oluştur
-    cur.execute("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'bitirme'")
-    database_exists = cur.fetchone()
-    
-    if not database_exists:
-        cur.execute("CREATE DATABASE bitirme CHARACTER SET utf8mb3 COLLATE utf8mb3_turkish_ci")
-        print("Veritabanı oluşturuldu.")
-    else:
-        print("Veritabanı zaten mevcut.")
-    
-    # Veritabanına geçiş yap
-    cur.execute("USE bitirme")
-    
-    # `users` tablosunu oluştur
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS `users` (
-            `id` int NOT NULL AUTO_INCREMENT,
-            `email` varchar(100) COLLATE utf8mb3_turkish_ci NOT NULL,
-            `password` varchar(50) COLLATE utf8mb3_turkish_ci NOT NULL,
-            PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_turkish_ci
-    """)
-    print("`users` tablosu kontrol edildi veya oluşturuldu.")
-    
-    # `user_files` tablosunu oluştur
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS `user_files` (
-            `id` int NOT NULL AUTO_INCREMENT,
-            `file_name` varchar(255) COLLATE utf8mb3_turkish_ci NOT NULL,
-            `uploaded_at` datetime DEFAULT CURRENT_TIMESTAMP,
-            `user_id` int NOT NULL,
-            `file_content` longblob,
-            PRIMARY KEY (`id`)
-        ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_turkish_ci
-    """)
-    print("`user_files` tablosu kontrol edildi veya oluşturuldu.")
-    
-    cur.close()
+    try:
+        conn = mysql.connect
+        cur = conn.cursor()
+
+        # Veritabanını oluştur
+        cur.execute("CREATE DATABASE IF NOT EXISTS bitirme")
+        conn.select_db('bitirme')  # Yeni veritabanını kullan
+        
+        # Tabloları oluştur
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(255) NOT NULL UNIQUE,
+            password VARCHAR(255) NOT NULL
+        )
+        """)
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS files (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            filename VARCHAR(255) NOT NULL,
+            file_content LONGBLOB,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+        """)
+        conn.commit()
+        cur.close()
+    except Exception as e:
+        print(f"Veritabanı başlatılırken hata oluştu: {e}")
 
 def sign_in(email, password):
     cur = mysql.connection.cursor()
