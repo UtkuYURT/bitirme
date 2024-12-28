@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let updatedData = [];
 
         if (rowIndex === null) {
-          // Sütun adı güncelleme 
+          // Sütun adı güncelleme
           updatedData = [
             {
               column_name: columnName,
