@@ -56,15 +56,16 @@ def create_tables():
         )
         """)
 
-        # Files tablosunu oluştur
+        # user_files tablosunu oluştur
         cur.execute("""
-        CREATE TABLE IF NOT EXISTS files (
+        CREATE TABLE IF NOT EXISTS user_files (
             id INT AUTO_INCREMENT PRIMARY KEY,
             user_id INT NOT NULL,
-            filename VARCHAR(255) NOT NULL,
+            file_name VARCHAR(255) NOT NULL,
+            uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             file_content LONGBLOB,
             FOREIGN KEY (user_id) REFERENCES users(id)
-        )
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_turkish_ci
         """)
 
         print("Tablolar başarıyla oluşturuldu veya zaten mevcut.")
