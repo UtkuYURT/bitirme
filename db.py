@@ -10,16 +10,38 @@ def init_db(app):
     global mysql
     mysql = MySQL(app)
 
-def initialize_database():
+from flask_mysqldb import MySQL
+
+mysql = MySQL()
+
+def create_database():
+    """
+    Veritabanını oluşturur. Veritabanı mevcutsa hata vermez.
+    """
     try:
         conn = mysql.connect
         cur = conn.cursor()
-
+        
         # Veritabanını oluştur
         cur.execute("CREATE DATABASE IF NOT EXISTS bitirme")
-        conn.select_db('bitirme')  # Yeni veritabanını kullan
+        print("Veritabanı başarıyla oluşturuldu veya zaten mevcut.")
         
-        # Tabloları oluştur
+        cur.close()
+        conn.commit()
+    except Exception as e:
+        print(f"Veritabanı oluşturulurken hata oluştu: {e}")
+
+
+def create_tables():
+    """
+    Tabloları oluşturur. Tablo mevcutsa hata vermez.
+    """
+    try:
+        conn = mysql.connect
+        conn.select_db('bitirme')  # Veritabanını seç
+        cur = conn.cursor()
+
+        # Users tablosunu oluştur
         cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -27,6 +49,8 @@ def initialize_database():
             password VARCHAR(255) NOT NULL
         )
         """)
+
+        # Files tablosunu oluştur
         cur.execute("""
         CREATE TABLE IF NOT EXISTS files (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -36,10 +60,13 @@ def initialize_database():
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
         """)
-        conn.commit()
+
+        print("Tablolar başarıyla oluşturuldu veya zaten mevcut.")
         cur.close()
+        conn.commit()
     except Exception as e:
-        print(f"Veritabanı başlatılırken hata oluştu: {e}")
+        print(f"Tablolar oluşturulurken hata oluştu: {e}")
+
 
 def sign_in(email, password):
     cur = mysql.connection.cursor()

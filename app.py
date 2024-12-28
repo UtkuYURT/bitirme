@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
-from db import init_db, sign_up, sign_in, save_files, get_files, delete_files, get_file_data, uptade_table_data, initialize_database
+from db import init_db, sign_up, sign_in, save_files, get_files, delete_files, get_file_data, uptade_table_data, create_database, create_tables
 import pandas as pd
 import os
 
@@ -16,7 +16,8 @@ app.config['MYSQL_DB'] = 'bitirme'
 init_db(app)
 
 with app.app_context():
-    initialize_database()
+    create_database()
+    create_tables()
 
 @app.route('/')
 def home():
