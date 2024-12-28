@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
-from db import init_db, sign_up, sign_in, save_files, get_files, delete_files, get_file_data, uptade_table_data, create_database, create_tables
+from db import init_db, sign_up, sign_in, save_files, get_files, delete_files, get_file_data, update_table_data, create_database, create_tables
 import pandas as pd
 import os
 
@@ -107,28 +107,24 @@ def delete_file():
 
 def generate_editable_table(df):
     table_html = '<table class="table table-bordered table-hover" id="editable-table">'
-    
-    # Başlıkları ekle
+
     table_html += '<thead><tr>'
     for col in df.columns:
-        table_html += f'<th>{col}</th>'
+        table_html += f'<th contenteditable="true" data-column="{col}" class="editable-header">{col}</th>'
     table_html += '</tr></thead>'
     
-    # Satırları ekle
     table_html += '<tbody>'
     for i, row in df.iterrows():
-        table_html += '<tr>'
+        table_html += f'<tr data-row="{i}">' 
         for col in df.columns:
-            # contenteditable özelliği ile hücreyi düzenlenebilir hale getir
-            table_html += f'<td contenteditable="true" data-column="{col}" data-row="{i}">{row[col]}</td>'
+            table_html += f'<td contenteditable="true" data-column="{col}" data-row="{i}" class="editable-cell">{row[col]}</td>'
         table_html += '</tr>'
     table_html += '</tbody></table>'
-    
+
     return table_html
 
 @app.route('/main_page')
 def main_page():
-    # Burada, dosya içeriğini ve diğer verileri yükleyebilirsiniz
     return render_template('main_page.html')
 
 @app.route('/main_page/<file_name>', methods=['GET', 'POST'])
@@ -137,7 +133,7 @@ def view_file(file_name):
 
     if not user_id:
         flash("Kullanıcı giriş yapmamış", "file_danger")
-        return redirect(url_for('login'))  # Kullanıcıyı giriş sayfasına yönlendir
+        return redirect(url_for('login'))
 
     if request.method == 'GET':
         file_extension = os.path.splitext(file_name)[1].lower()
@@ -156,14 +152,14 @@ def view_file(file_name):
         else:
             flash("Dosya bulunamadı veya içerik mevcut değil", "file_danger")
         
-        return redirect(url_for('main_page'))  # Boş dosya durumu için ana sayfaya yönlendirme
+        return redirect(url_for('main_page')) 
 
     else:
-        data = request.get_json()
+        data = request.get_json() 
         updated_data = data.get('updated_data')
 
         try:
-            uptade_table_data(user_id, file_name, updated_data)  # Veritabanını güncelle
+            update_table_data(user_id, file_name, updated_data) 
             flash("Dosya kaydedilmesi başarılı", "file_success")
             return jsonify({"success": True, "message": "Veriler başarıyla güncellendi."})
         except Exception as e:

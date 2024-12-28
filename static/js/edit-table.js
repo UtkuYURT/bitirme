@@ -2,33 +2,49 @@ document.addEventListener("DOMContentLoaded", function () {
   const fileName = document
     .getElementById("file_div")
     .getAttribute("data-file-name");
-  const table = document.getElementById("editable-table"); // Tablo ID'si
+  const table = document.getElementById("editable-table");
 
   table.addEventListener(
     "blur",
     function (event) {
       if (event.target.isContentEditable) {
-        const updatedValue = event.target.innerText; // Yeni hücre değeri
-        const columnName = event.target.getAttribute("data-column"); // Kolon adı
-        const rowIndex = event.target.getAttribute("data-row"); // Satır indexi
+        const updatedValue = event.target.innerText;
+        const columnName = event.target.getAttribute("data-column");
+        const rowIndex = event.target.getAttribute("data-row");
 
-        const updatedData = [
-          {
-            row_index: rowIndex,
-            column_name: columnName,
-            new_value: updatedValue,
-          },
-        ];
+        // ! Kontrol
+        console.log(
+          `Row Index: ${rowIndex}, Column Name: ${columnName}, New Value: ${updatedValue}`
+        );
 
-        // AJAX isteği gönder
+        let updatedData = [];
+
+        if (rowIndex === null) {
+          // Sütun adı güncelleme 
+          updatedData = [
+            {
+              column_name: columnName,
+              new_value: updatedValue,
+            },
+          ];
+        } else {
+          // Satır hücresinin güncellenmesi durumu
+          updatedData = [
+            {
+              row_index: rowIndex,
+              column_name: columnName,
+              new_value: updatedValue,
+            },
+          ];
+        }
+
         fetch(`/main_page/${fileName}`, {
-          // file_name'i Flask'tan alıyoruz
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            file_name: fileName, // Flask'tan gelen dosya adı
+            file_name: fileName,
             updated_data: updatedData,
           }),
         })

@@ -1,8 +1,10 @@
-const alerts = document.querySelectorAll(".alert-dismissible");
+if (typeof alerts === "undefined") {
+  const alerts = document.querySelectorAll(".alert-dismissible");
 
-alerts.forEach((alert) => {
-  setTimeout(() => {
-    alert.classList.add("fade");
-    setTimeout(() => alert.remove(), 500);
-  }, 2000);
-});
+  alerts.forEach((alert) => {
+    setTimeout(() => {
+      alert.classList.add("fade");
+      setTimeout(() => alert.remove(), 500);
+    }, 2000);
+  });
+}

@@ -4,7 +4,6 @@ import MySQLdb
 import pandas as pd
 import io
 
-
 mysql = MySQL()
 
 def init_db(app):
@@ -12,19 +11,14 @@ def init_db(app):
     mysql = MySQL(app)
 
 def create_database():
-    """
-    Veritabanını oluşturur. Veritabanı mevcutsa hata vermez.
-    """
     try:
-        # Sadece MySQL sunucusuna bağlan
         conn = MySQLdb.connect(
             host='localhost',
-            user='root',       # Kullanıcı adınızı yazın
-            passwd='root'      # Şifrenizi yazın
+            user='root',       
+            passwd='root'     
         )
         cur = conn.cursor()
 
-        # Veritabanını oluştur
         cur.execute("CREATE DATABASE IF NOT EXISTS bitirme")
         print("Veritabanı başarıyla oluşturuldu veya zaten mevcut.")
         
@@ -34,15 +28,12 @@ def create_database():
         print(f"Veritabanı oluşturulurken hata oluştu: {e}")
 
 def create_tables():
-    """
-    Tabloları oluşturur. Tablo mevcutsa hata vermez.
-    """
     try:
         conn = mysql.connect
-        conn.select_db('bitirme')  # Veritabanını seç
+        conn.select_db('bitirme') 
         cur = conn.cursor()
 
-        # Users tablosunu oluştur
+        # users tablosu
         cur.execute("""
         CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -51,7 +42,7 @@ def create_tables():
         )
         """)
 
-        # user_files tablosunu oluştur
+        # user_files tablosu
         cur.execute("""
         CREATE TABLE IF NOT EXISTS user_files (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -137,46 +128,59 @@ def get_file_data(user_id, file_name, file_type=None):
             except Exception as e:
                 return f"CSV dosyası okuma hatası: {e}"
 
-def uptade_table_data(user_id, file_name, updated_data, file_type='xlsx'):
-    # Mevcut dosya içeriğini al
-    file_type = file_name.rsplit('.', 1)[1].lower()
-    file_content = get_file_data(user_id, file_name, file_type)
+def update_table_data(user_id, file_name, updated_data, file_type='xlsx'):
+    file_type = file_name.rsplit('.', 1)[1].lower()  
+    file_content = get_file_data(user_id, file_name, file_type) 
     
-    if isinstance(file_content, str):  # Hata mesajı geldi mi?
+    if isinstance(file_content, str): 
         return file_content
-
-    # Güncellenen verileri işle
+    
     for update in updated_data:
-        row_index = int(update['row_index'])  # Satır indexini al
-        column_name = update['column_name']  # Sütun adını al
-        new_value = update['new_value']  # Yeni değeri al
+        if 'row_index' in update:  # Satır güncellemesi
+            row_index = int(update['row_index'])  
+            column_name = update['column_name']  
+            new_value = update['new_value'] 
 
-        # Veriyi güncelle
-        if row_index < len(file_content) and column_name in file_content.columns:
-            file_content.at[row_index, column_name] = new_value
-        else:
-            return "Geçersiz satır veya sütun adı."
+            if row_index < len(file_content): 
+                if column_name in file_content.columns:
+                    file_content.at[row_index, column_name] = new_value
+                else:
+                    return print(f"Geçersiz sütun adı: {column_name}")
+            else:
+                return print(f"Geçersiz satır dizini: {row_index}")
 
-    # Güncellenmiş veriyi byte formatına çevir
-    output = io.BytesIO()
-    if file_type == 'xlsx':
-        file_content.to_excel(output, index=False, engine='openpyxl')
-    elif file_type == 'csv':
-        file_content.to_csv(output, index=False, encoding='utf-8')
+        elif 'column_name' in update:  # Sütun başlığı güncellemesi
+            column_name = update['column_name']  
+            new_value = update['new_value']  
 
-    # Veriyi veritabanına kaydet
+            if column_name in file_content.columns:
+                file_content.rename(columns={column_name: new_value}, inplace=True)
+            else:
+                return print(f"Geçersiz sütun adı: {column_name}")
+
+    output = io.BytesIO()  
+    if file_type == 'xlsx':  
+        file_content.to_excel(output, index=False, engine='openpyxl')  
+    elif file_type == 'csv':  
+        file_content.to_csv(output, index=False, encoding='utf-8') 
+
     file_byte_data = output.getvalue()
 
-    cur = mysql.connection.cursor()
+    cur = mysql.connection.cursor() 
     try:
         cur.execute("UPDATE user_files SET file_content = %s WHERE user_id = %s AND file_name = %s",
-                    (file_byte_data, user_id, file_name))
+                    (file_byte_data, user_id, file_name)) 
     except Exception as e:
-        return f"Dosya güncelleme hatası: {str(e)}"
+        return print(f"Dosya güncelleme hatası: {str(e)}")
 
-    mysql.connection.commit()
-    cur.close()
-    return "Dosya başarıyla güncellendi."
+    mysql.connection.commit()  
+    cur.close()  
+    return "Dosya başarıyla güncellendi." 
+
+
+
+
+
 
 
 
