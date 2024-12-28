@@ -56,10 +56,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Sidebar kapa aç
 document.addEventListener("DOMContentLoaded", function () {
-  // Her sidebar-control elementini seç
-  document.querySelectorAll("#sidebar-control").forEach((control) => {
+  // class kullanarak sidebar-control elementlerini seç
+  document.querySelectorAll(".sidebar-control").forEach((control) => {
     control.addEventListener("click", function (e) {
-      e.preventDefault(); // Link davranışını engelle
+      e.preventDefault();
 
       // En yakın sidebar elementini bul
       const parentSidebar = this.closest("[id^='sidebar-']");
