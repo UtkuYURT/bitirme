@@ -1,6 +1,6 @@
 // çıkış yap
 const logOut = document.querySelector("#logout-button");
-logOut.addEventListener("click", () => {
+logOut?.addEventListener("click", () => {
   window.location.href = "/";
   alert("Çıkış Yapıldı");
 });
@@ -54,13 +54,18 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// sidebar kapa aç
+// Sidebar kapa aç
 document.addEventListener("DOMContentLoaded", function () {
-  const sidebar = document.getElementById("sidebar");
+  // Her sidebar-control elementini seç
+  document.querySelectorAll("#sidebar-control").forEach((control) => {
+    control.addEventListener("click", function (e) {
+      e.preventDefault(); // Link davranışını engelle
 
-  document
-    .getElementById("sidebar-control")
-    .addEventListener("click", function () {
-      sidebar.classList.toggle("close");
+      // En yakın sidebar elementini bul
+      const parentSidebar = this.closest("[id^='sidebar-']");
+      if (parentSidebar) {
+        parentSidebar.classList.toggle("close");
+      }
     });
+  });
 });

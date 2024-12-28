@@ -1,0 +1,91 @@
+<head>
+  <link
+    rel="stylesheet"
+    href="{{ url_for('static', filename='css/sidebar.css') }}"
+  />
+</head>
+
+<div class="p-3 bg-dark {{ position }}-sidebar" id="sidebar-{{ position }}">
+  <div class="toggle-sidebar">
+    <a
+      href="#"
+      class="d-flex pb-3 mb-3 text-decoration-none border-bottom"
+      id="sidebar-control"
+    >
+      <i class="fa-solid fa-bars p-1" id="bar-i"></i>
+      <span class="fs-5 fw-semibold" id="logo-name">İşlemler</span>
+    </a>
+  </div>
+
+  <ul class="list-unstyled" id="sidebar-list">
+    <li>
+      <button
+        class="btn btn-toggle rounded collapsed text-white toggle-button"
+        data-bs-toggle="collapse"
+        data-bs-target="#collapse1"
+        aria-expanded="false"
+      >
+        <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        <span class="name">Veri İşlemleri</span>
+      </button>
+      <div class="collapse" id="collapse1">
+        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+          <li><a href="#" class="rounded">Veri Seç</a></li>
+          <li><a href="#" class="rounded">Veri Filtrele</a></li>
+          <li><a href="#" class="rounded">Veri Temizle</a></li>
+        </ul>
+      </div>
+    </li>
+
+    <li>
+      <button
+        class="btn btn-toggle rounded collapsed text-white toggle-button"
+        data-bs-toggle="collapse"
+        data-bs-target="#collapse2"
+        aria-expanded="false"
+      >
+        <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        <span class="name">Görselleştirme</span>
+      </button>
+      <div class="collapse" id="collapse2">
+        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+          <li><a href="#" class="rounded">Grafik Oluştur</a></li>
+          <li><a href="#" class="rounded">Tablo Oluştur</a></li>
+        </ul>
+      </div>
+    </li>
+
+    <li>
+      <button
+        class="btn btn-toggle rounded collapsed text-white toggle-button"
+        data-bs-toggle="collapse"
+        data-bs-target="#collapse3"
+        aria-expanded="false"
+      >
+        <i class="fa-solid fa-chevron-down toggle-icon"></i>
+        <span class="name">Raporlama</span>
+      </button>
+      <div class="collapse" id="collapse3">
+        <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+          <li><a href="#" class="rounded">Rapor Oluştur</a></li>
+          <li><a href="#" class="rounded">Rapor İndir</a></li>
+        </ul>
+      </div>
+    </li>
+
+    <li>
+      <button
+        class="btn btn-toggle rounded collapsed text-white toggle-button"
+        data-bs-toggle="collapse"
+        data-bs-target="#collapse13"
+        aria-expanded="false"
+        id="logout-button"
+      >
+        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+        <span class="name">Çıkış Yap</span>
+      </button>
+    </li>
+  </ul>
+</div>
+
+<script src="{{ url_for('static', filename='js/sidebar.js') }}"></script>

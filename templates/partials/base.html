@@ -19,7 +19,15 @@
   </head>
   <body>
     <div>
-      {% if show_sidebar %} {% include "partials/sidebar.html" %} {% endif %}
+      {% if show_sidebar %}
+      <div class="sidebar-container">
+        {% if show_right_sidebar %} {# Analysis ve main_page sayfaları için sol
+        sidebar (farklı içerikle) #} {% with position = 'left' %} {% include
+        "partials/right_sidebar.html" %} {% endwith %} {% else %} {# Diğer
+        sayfalar için normal sol sidebar #} {% with position = 'left' %} {%
+        include "partials/sidebar.html" %} {% endwith %} {% endif %}
+      </div>
+      {% endif %}
     </div>
     <div>{% block content %}{% endblock %}</div>
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
