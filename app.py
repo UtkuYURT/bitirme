@@ -152,19 +152,18 @@ def view_file(file_name):
         else:
             flash("Dosya bulunamadı veya içerik mevcut değil", "file_danger")
         
-        return redirect(url_for('file_operations'))
+        return redirect(url_for('main_page')) 
 
-    else:  # POST request
-        data = request.get_json()
+    else:
+        data = request.get_json() 
         updated_data = data.get('updated_data')
 
         try:
-            result = update_table_data(user_id, file_name, updated_data)
-            if result:
-                return jsonify({"success": True, "message": "Veriler başarıyla güncellendi."})
-            else:
-                return jsonify({"success": False, "message": "Güncelleme başarısız oldu."})
+            update_table_data(user_id, file_name, updated_data) 
+            flash("Dosya kaydedilmesi başarılı", "file_success")
+            return jsonify({"success": True, "message": "Veriler başarıyla güncellendi."})
         except Exception as e:
+            flash("Dosya kaydedilemedi", "file_danger")
             return jsonify({"success": False, "message": f"Hata: {str(e)}"})
 
 if __name__ == '__main__':

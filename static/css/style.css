@@ -240,17 +240,3 @@ button.btn-remove:hover {
     margin-top: 0.8rem;
   }
 }
-
-.sidebar {
-    min-height: 100vh;
-    border-right: 1px solid #dee2e6;
-    padding: 20px;
-}
-
-.selected {
-    background-color: #e9ecef;
-}
-
-.editable-cell:hover {
-    background-color: #f8f9fa;
-}

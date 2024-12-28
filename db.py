@@ -129,69 +129,53 @@ def get_file_data(user_id, file_name, file_type=None):
                 return f"CSV dosyası okuma hatası: {e}"
 
 def update_table_data(user_id, file_name, updated_data, file_type='xlsx'):
-    try:
-        file_type = file_name.rsplit('.', 1)[1].lower()
-        file_content = get_file_data(user_id, file_name, file_type)
-        
-        if isinstance(file_content, str):
-            return file_content
-        
-        for update in updated_data:
-            action = update.get('action')
-            
-            if action == 'add_row':
-                # Yeni satır için veri oluştur
-                new_data = {col['column_name']: col['value'] for col in update['columns']}
-                # Yeni satırı DataFrame'e ekle
-                new_row_df = pd.DataFrame([new_data])
-                file_content = pd.concat([file_content, new_row_df], ignore_index=True)
-                
-            elif action == 'delete_row':
-                # Satır sil
-                row_index = int(update['row_index'])
-                file_content = file_content.drop(index=row_index).reset_index(drop=True)
-                
-            elif action == 'update_cell':
-                # Hücre güncelle
-                row_index = int(update['row_index'])
-                column_name = update['column_name']
-                new_value = update['new_value']
-                
-                if row_index < len(file_content):
-                    if column_name in file_content.columns:
-                        file_content.at[row_index, column_name] = new_value
-                    else:
-                        raise ValueError(f"Geçersiz sütun adı: {column_name}")
+    file_type = file_name.rsplit('.', 1)[1].lower()  
+    file_content = get_file_data(user_id, file_name, file_type) 
+    
+    if isinstance(file_content, str): 
+        return file_content
+    
+    for update in updated_data:
+        if 'row_index' in update:  # Satır güncellemesi
+            row_index = int(update['row_index'])  
+            column_name = update['column_name']  
+            new_value = update['new_value'] 
+
+            if row_index < len(file_content): 
+                if column_name in file_content.columns:
+                    file_content.at[row_index, column_name] = new_value
                 else:
-                    raise ValueError(f"Geçersiz satır dizini: {row_index}")
+                    return print(f"Geçersiz sütun adı: {column_name}")
+            else:
+                return print(f"Geçersiz satır dizini: {row_index}")
 
-        # Dosyayı kaydet
-        output = io.BytesIO()
-        if file_type == 'xlsx':
-            file_content.to_excel(output, index=False, engine='openpyxl')
-        elif file_type == 'csv':
-            file_content.to_csv(output, index=False, encoding='utf-8')
+        elif 'column_name' in update:  # Sütun başlığı güncellemesi
+            column_name = update['column_name']  
+            new_value = update['new_value']  
 
-        file_byte_data = output.getvalue()
+            if column_name in file_content.columns:
+                file_content.rename(columns={column_name: new_value}, inplace=True)
+            else:
+                return print(f"Geçersiz sütun adı: {column_name}")
 
-        cur = mysql.connection.cursor()
-        try:
-            cur.execute("""
-                UPDATE user_files 
-                SET file_content = %s, uploaded_at = NOW() 
-                WHERE user_id = %s AND file_name = %s
-            """, (file_byte_data, user_id, file_name))
-            mysql.connection.commit()
-            cur.close()
-            return True
-        except Exception as e:
-            mysql.connection.rollback()
-            cur.close()
-            raise Exception(f"Veritabanı güncelleme hatası: {str(e)}")
+    output = io.BytesIO()  
+    if file_type == 'xlsx':  
+        file_content.to_excel(output, index=False, engine='openpyxl')  
+    elif file_type == 'csv':  
+        file_content.to_csv(output, index=False, encoding='utf-8') 
 
+    file_byte_data = output.getvalue()
+
+    cur = mysql.connection.cursor() 
+    try:
+        cur.execute("UPDATE user_files SET file_content = %s WHERE user_id = %s AND file_name = %s",
+                    (file_byte_data, user_id, file_name)) 
     except Exception as e:
-        print(f"Hata oluştu: {str(e)}")
-        return False
+        return print(f"Dosya güncelleme hatası: {str(e)}")
+
+    mysql.connection.commit()  
+    cur.close()  
+    return "Dosya başarıyla güncellendi." 
 
 
 
