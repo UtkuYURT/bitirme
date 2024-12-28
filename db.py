@@ -10,6 +10,48 @@ def init_db(app):
     global mysql
     mysql = MySQL(app)
 
+def initialize_database():
+    cur = mysql.connection.cursor()
+    
+    # Veritabanını kontrol et ve oluştur
+    cur.execute("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = 'bitirme'")
+    database_exists = cur.fetchone()
+    
+    if not database_exists:
+        cur.execute("CREATE DATABASE bitirme CHARACTER SET utf8mb3 COLLATE utf8mb3_turkish_ci")
+        print("Veritabanı oluşturuldu.")
+    else:
+        print("Veritabanı zaten mevcut.")
+    
+    # Veritabanına geçiş yap
+    cur.execute("USE bitirme")
+    
+    # `users` tablosunu oluştur
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS `users` (
+            `id` int NOT NULL AUTO_INCREMENT,
+            `email` varchar(100) COLLATE utf8mb3_turkish_ci NOT NULL,
+            `password` varchar(50) COLLATE utf8mb3_turkish_ci NOT NULL,
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_turkish_ci
+    """)
+    print("`users` tablosu kontrol edildi veya oluşturuldu.")
+    
+    # `user_files` tablosunu oluştur
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS `user_files` (
+            `id` int NOT NULL AUTO_INCREMENT,
+            `file_name` varchar(255) COLLATE utf8mb3_turkish_ci NOT NULL,
+            `uploaded_at` datetime DEFAULT CURRENT_TIMESTAMP,
+            `user_id` int NOT NULL,
+            `file_content` longblob,
+            PRIMARY KEY (`id`)
+        ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_turkish_ci
+    """)
+    print("`user_files` tablosu kontrol edildi veya oluşturuldu.")
+    
+    cur.close()
+
 def sign_in(email, password):
     cur = mysql.connection.cursor()
     cur.execute("SELECT * FROM users WHERE email = %s AND password = %s", (email, password))
