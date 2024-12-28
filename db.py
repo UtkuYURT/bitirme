@@ -1,20 +1,15 @@
 from flask_mysqldb import MySQL
 from datetime import datetime
+import MySQLdb
 import pandas as pd
 import io
 
 
-mysql = None
+mysql = MySQL()
 
 def init_db(app):
     global mysql
     mysql = MySQL(app)
-
-from flask_mysqldb import MySQL
-
-mysql = MySQL()
-
-import MySQLdb
 
 def create_database():
     """
@@ -73,7 +68,6 @@ def create_tables():
         conn.commit()
     except Exception as e:
         print(f"Tablolar oluşturulurken hata oluştu: {e}")
-
 
 def sign_in(email, password):
     cur = mysql.connection.cursor()
