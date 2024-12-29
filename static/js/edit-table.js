@@ -184,3 +184,71 @@ function updateDatabase(fileName, updatedData) {
       console.error("Hata:", error);
     });
 }
+
+document.addEventListener("DOMContentLoaded", function () {
+  const table = document.getElementById("editable-table");
+  let selectedRow = null;
+
+  // Satır seçme işlemi
+  if (table) {
+    table.addEventListener("click", function (e) {
+      const row = e.target.closest("tr");
+      if (row) {
+        // Önceki seçili satırın vurgulamasını kaldır
+        if (selectedRow) {
+          selectedRow.classList.remove("selected-row");
+        }
+        // Yeni satırı seç ve vurgula
+        selectedRow = row;
+        row.classList.add("selected-row");
+      }
+    });
+  }
+
+  // Satır silme butonu
+  const deleteRowButton = document.getElementById("delete-row-button");
+  if (deleteRowButton) {
+    deleteRowButton.addEventListener("click", function () {
+      if (!selectedRow) {
+        alert("Lütfen silmek için bir satır seçin");
+        return;
+      }
+
+      const rowIndex = selectedRow.getAttribute("data-row");
+      const fileName = document
+        .getElementById("file_div")
+        .getAttribute("data-file-name");
+
+      // Silme işlemi için backend'e istek gönder
+      fetch(`/main_page/${fileName}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: JSON.stringify({
+          updated_data: [
+            {
+              delete_row: true,
+              row_index: parseInt(rowIndex),
+            },
+          ],
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            // Başarılı silme işlemi sonrası satırı DOM'dan kaldır
+            selectedRow.remove();
+            selectedRow = null;
+            console.log("Satır başarıyla silindi");
+          } else {
+            console.error("Satır silinirken hata oluştu:", data.message);
+          }
+        })
+        .catch((error) => {
+          console.error("Silme işlemi sırasında hata:", error);
+        });
+    });
+  }
+});

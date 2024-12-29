@@ -138,7 +138,11 @@ def update_table_data(user_id, file_name, updated_data):
     
     try:
         for update in updated_data:
-            if 'is_new_row' in update:  # Yeni satır ekleme
+            if 'delete_row' in update:  # Satır silme
+                row_index = update['row_index']
+                file_content = file_content.drop(index=row_index).reset_index(drop=True)
+                
+            elif 'is_new_row' in update:  # Yeni satır ekleme
                 # Boş bir DataFrame satırı oluştur
                 empty_row = pd.Series([''] * len(file_content.columns), index=file_content.columns)
                 
