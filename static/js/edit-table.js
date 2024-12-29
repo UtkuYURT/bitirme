@@ -252,3 +252,158 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   }
 });
+
+document.addEventListener("DOMContentLoaded", function () {
+  const addColumnButton = document.getElementById("add-column-button");
+  console.log("Sütun ekleme butonu:", addColumnButton);
+
+  if (addColumnButton) {
+    console.log("Buton bulundu, event listener ekleniyor");
+    addColumnButton.addEventListener("click", function () {
+      console.log("Butona tıklandı");
+
+      // Yeni sütun adını kullanıcıdan al
+      const newColumnName = prompt("Yeni sütun adını giriniz:");
+
+      // Eğer kullanıcı iptal ederse veya boş isim girerse işlemi iptal et
+      if (!newColumnName || newColumnName.trim() === "") {
+        return;
+      }
+
+      const table = document.getElementById("editable-table");
+      const fileName = document
+        .getElementById("file_div")
+        .getAttribute("data-file-name");
+
+      // Header'a yeni sütun ekle
+      const headerRow = table.querySelector("thead tr");
+      const newHeader = document.createElement("th");
+      newHeader.setAttribute("contenteditable", "true");
+      newHeader.setAttribute("data-column", newColumnName);
+      newHeader.textContent = newColumnName;
+      headerRow.appendChild(newHeader);
+
+      // Tüm mevcut satırlara yeni boş hücre ekle
+      const rows = table.querySelectorAll("tbody tr");
+      rows.forEach((row, rowIndex) => {
+        const newCell = document.createElement("td");
+        newCell.setAttribute("contenteditable", "true");
+        newCell.setAttribute("data-column", newColumnName);
+        newCell.setAttribute("data-row", rowIndex);
+        newCell.classList.add("editable-cell");
+        row.appendChild(newCell);
+      });
+
+      // Veritabanını güncelle
+      fetch(`/main_page/${fileName}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: JSON.stringify({
+          updated_data: [
+            {
+              add_column: true,
+              column_name: newColumnName,
+            },
+          ],
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            console.log("Yeni sütun başarıyla eklendi");
+          } else {
+            console.error("Sütun eklenirken hata oluştu:", data.message);
+          }
+        })
+        .catch((error) => {
+          console.error("AJAX hatası:", error);
+        });
+    });
+  }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+  const table = document.getElementById("editable-table");
+  let selectedColumn = null;
+
+  // Sütun seçme işlemi
+  if (table) {
+    table.addEventListener("click", function (e) {
+      const cell = e.target.closest("th, td");
+      if (cell) {
+        const columnName = cell.getAttribute("data-column");
+        if (columnName) {
+          // Önceki seçili sütunun vurgulamasını kaldır
+          if (selectedColumn) {
+            table
+              .querySelectorAll(`[data-column="${selectedColumn}"]`)
+              .forEach((cell) => {
+                cell.classList.remove("selected-column");
+              });
+          }
+
+          // Yeni sütunu seç ve vurgula
+          selectedColumn = columnName;
+          table
+            .querySelectorAll(`[data-column="${columnName}"]`)
+            .forEach((cell) => {
+              cell.classList.add("selected-column");
+            });
+        }
+      }
+    });
+  }
+
+  // Sütun silme butonu
+  const deleteColumnButton = document.getElementById("delete-column-button");
+  if (deleteColumnButton) {
+    deleteColumnButton.addEventListener("click", function () {
+      if (!selectedColumn) {
+        alert("Lütfen silmek için bir sütun seçin");
+        return;
+      }
+
+      const fileName = document
+        .getElementById("file_div")
+        .getAttribute("data-file-name");
+
+      // Silme işlemi için backend'e istek gönder
+      fetch(`/main_page/${fileName}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: JSON.stringify({
+          updated_data: [
+            {
+              delete_column: true,
+              column_name: selectedColumn,
+            },
+          ],
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            // Başarılı silme işlemi sonrası sütunu DOM'dan kaldır
+            table
+              .querySelectorAll(`[data-column="${selectedColumn}"]`)
+              .forEach((cell) => {
+                cell.remove();
+              });
+            selectedColumn = null;
+            console.log("Sütun başarıyla silindi");
+          } else {
+            console.error("Sütun silinirken hata oluştu:", data.message);
+          }
+        })
+        .catch((error) => {
+          console.error("Silme işlemi sırasında hata:", error);
+        });
+    });
+  }
+});

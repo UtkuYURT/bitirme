@@ -3,7 +3,6 @@ from datetime import datetime
 import MySQLdb
 import pandas as pd
 import io
-import numpy as np
 
 mysql = MySQL()
 
@@ -138,60 +137,75 @@ def update_table_data(user_id, file_name, updated_data):
     
     try:
         for update in updated_data:
-            if 'delete_row' in update:  # Satır silme
+            if 'delete_column' in update:  # Sütun silme
+                column_name = update['column_name']
+                if column_name in file_content.columns:
+                    file_content = file_content.drop(columns=[column_name])
+            
+            elif 'add_column' in update:
+                new_column_name = update['column_name']
+                file_content[new_column_name] = ''
+                
+            elif 'delete_row' in update:
                 row_index = update['row_index']
                 file_content = file_content.drop(index=row_index).reset_index(drop=True)
                 
-            elif 'is_new_row' in update:  # Yeni satır ekleme
-                # Boş bir DataFrame satırı oluştur
+            elif 'is_new_row' in update:
                 empty_row = pd.Series([''] * len(file_content.columns), index=file_content.columns)
-                
-                # Yeni satırı DataFrame'e ekle
                 file_content = pd.concat([file_content, pd.DataFrame([empty_row])], ignore_index=True)
-                
-                # NaN değerleri boş string ile değiştir
                 file_content = file_content.fillna('')
                 
-            elif 'row_index' in update and 'column_name' in update:  # Mevcut satır güncelleme
+            elif 'row_index' in update and 'column_name' in update:
                 row_index = int(update['row_index'])
-                column_name = update['column_name']  
-                new_value = update['new_value'] 
+                column_name = update['column_name']
+                new_value = update['new_value']
+
+                # Sayısal değer kontrolü ve dönüşümü
+                try:
+                    if new_value.strip().isdigit():  # Tam sayı kontrolü
+                        new_value = int(new_value)
+                    elif new_value.replace('.', '', 1).isdigit():  # Ondalık sayı kontrolü
+                        if float(new_value).is_integer():  # Eğer ondalık kısmı 0 ise
+                            new_value = int(float(new_value))
+                        else:
+                            new_value = float(new_value)
+                except (ValueError, AttributeError):
+                    pass  # Sayısal değer değilse olduğu gibi bırak
 
                 if column_name in file_content.columns:
                     file_content.loc[row_index, column_name] = new_value
-                    # Güncellemeden sonra NaN değerleri boş string yap
+                    # Sütundaki tüm değerleri kontrol et ve int'e dönüştür
+                    try:
+                        if all(str(x).strip().isdigit() or (isinstance(x, (int, float)) and float(x).is_integer()) 
+                            for x in file_content[column_name] if pd.notna(x) and str(x).strip()):
+                            file_content[column_name] = file_content[column_name].apply(
+                                lambda x: int(float(x)) if pd.notna(x) and str(x).strip() else x
+                            )
+                    except:
+                        pass
                     file_content = file_content.fillna('')
                 else:
                     print(f"Geçersiz sütun adı: {column_name}")
 
-            elif 'column_name' in update:  # Sütun başlığı güncellemesi
-                column_name = update['column_name']  
-                new_value = update['new_value']  
-
-                if column_name in file_content.columns:
-                    file_content.rename(columns={column_name: new_value}, inplace=True)
-                else:
-                    print(f"Geçersiz sütun adı: {column_name}")
-
-        # Son bir kez daha NaN değerleri kontrol et
+        # NaN değerleri kontrol et
         file_content = file_content.fillna('')
 
-        output = io.BytesIO()  
-        if file_type == 'xlsx':  
+        output = io.BytesIO()
+        if file_type == 'xlsx':
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
                 file_content.to_excel(writer, index=False)
-        elif file_type == 'csv':  
-            file_content.to_csv(output, index=False, encoding='utf-8') 
+        elif file_type == 'csv':
+            file_content.to_csv(output, index=False, encoding='utf-8')
 
         file_byte_data = output.getvalue()
 
-        cur = mysql.connection.cursor() 
+        cur = mysql.connection.cursor()
         cur.execute("UPDATE user_files SET file_content = %s WHERE user_id = %s AND file_name = %s",
-                    (file_byte_data, user_id, file_name)) 
-        mysql.connection.commit()  
-        cur.close()  
+                    (file_byte_data, user_id, file_name))
+        mysql.connection.commit()
+        cur.close()
         return True
-        
+
     except Exception as e:
         print(f"Güncelleme hatası: {str(e)}")
         return f"Güncelleme hatası: {str(e)}"
