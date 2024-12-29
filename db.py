@@ -3,6 +3,7 @@ from datetime import datetime
 import MySQLdb
 import pandas as pd
 import io
+import numpy as np
 
 mysql = MySQL()
 
@@ -128,54 +129,68 @@ def get_file_data(user_id, file_name, file_type=None):
             except Exception as e:
                 return f"CSV dosyası okuma hatası: {e}"
 
-def update_table_data(user_id, file_name, updated_data, file_type='xlsx'):
-    file_type = file_name.rsplit('.', 1)[1].lower()  
-    file_content = get_file_data(user_id, file_name, file_type) 
+def update_table_data(user_id, file_name, updated_data):
+    file_type = file_name.rsplit('.', 1)[1].lower()
+    file_content = get_file_data(user_id, file_name, file_type)
     
-    if isinstance(file_content, str): 
+    if isinstance(file_content, str):
         return file_content
     
-    for update in updated_data:
-        if 'row_index' in update:  # Satır güncellemesi
-            row_index = int(update['row_index'])  
-            column_name = update['column_name']  
-            new_value = update['new_value'] 
-
-            if row_index < len(file_content): 
-                if column_name in file_content.columns:
-                    file_content.at[row_index, column_name] = new_value
-                else:
-                    return print(f"Geçersiz sütun adı: {column_name}")
-            else:
-                return print(f"Geçersiz satır dizini: {row_index}")
-
-        elif 'column_name' in update:  # Sütun başlığı güncellemesi
-            column_name = update['column_name']  
-            new_value = update['new_value']  
-
-            if column_name in file_content.columns:
-                file_content.rename(columns={column_name: new_value}, inplace=True)
-            else:
-                return print(f"Geçersiz sütun adı: {column_name}")
-
-    output = io.BytesIO()  
-    if file_type == 'xlsx':  
-        file_content.to_excel(output, index=False, engine='openpyxl')  
-    elif file_type == 'csv':  
-        file_content.to_csv(output, index=False, encoding='utf-8') 
-
-    file_byte_data = output.getvalue()
-
-    cur = mysql.connection.cursor() 
     try:
+        for update in updated_data:
+            if 'is_new_row' in update:  # Yeni satır ekleme
+                # Boş bir DataFrame satırı oluştur
+                empty_row = pd.Series([''] * len(file_content.columns), index=file_content.columns)
+                
+                # Yeni satırı DataFrame'e ekle
+                file_content = pd.concat([file_content, pd.DataFrame([empty_row])], ignore_index=True)
+                
+                # NaN değerleri boş string ile değiştir
+                file_content = file_content.fillna('')
+                
+            elif 'row_index' in update and 'column_name' in update:  # Mevcut satır güncelleme
+                row_index = int(update['row_index'])
+                column_name = update['column_name']  
+                new_value = update['new_value'] 
+
+                if column_name in file_content.columns:
+                    file_content.loc[row_index, column_name] = new_value
+                    # Güncellemeden sonra NaN değerleri boş string yap
+                    file_content = file_content.fillna('')
+                else:
+                    print(f"Geçersiz sütun adı: {column_name}")
+
+            elif 'column_name' in update:  # Sütun başlığı güncellemesi
+                column_name = update['column_name']  
+                new_value = update['new_value']  
+
+                if column_name in file_content.columns:
+                    file_content.rename(columns={column_name: new_value}, inplace=True)
+                else:
+                    print(f"Geçersiz sütun adı: {column_name}")
+
+        # Son bir kez daha NaN değerleri kontrol et
+        file_content = file_content.fillna('')
+
+        output = io.BytesIO()  
+        if file_type == 'xlsx':  
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                file_content.to_excel(writer, index=False)
+        elif file_type == 'csv':  
+            file_content.to_csv(output, index=False, encoding='utf-8') 
+
+        file_byte_data = output.getvalue()
+
+        cur = mysql.connection.cursor() 
         cur.execute("UPDATE user_files SET file_content = %s WHERE user_id = %s AND file_name = %s",
                     (file_byte_data, user_id, file_name)) 
+        mysql.connection.commit()  
+        cur.close()  
+        return True
+        
     except Exception as e:
-        return print(f"Dosya güncelleme hatası: {str(e)}")
-
-    mysql.connection.commit()  
-    cur.close()  
-    return "Dosya başarıyla güncellendi." 
+        print(f"Güncelleme hatası: {str(e)}")
+        return f"Güncelleme hatası: {str(e)}"
 
 
 

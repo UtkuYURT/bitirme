@@ -154,16 +154,25 @@ def view_file(file_name):
         
         return redirect(url_for('main_page')) 
 
-    else:
-        data = request.get_json() 
-        updated_data = data.get('updated_data')
-
+    else:  # POST request
         try:
-            update_table_data(user_id, file_name, updated_data) 
-            flash("Dosya kaydedilmesi başarılı", "file_success")
-            return jsonify({"success": True, "message": "Veriler başarıyla güncellendi."})
+            data = request.get_json()
+            if not data:
+                return jsonify({"success": False, "message": "Veri alınamadı"})
+            
+            updated_data = data.get('updated_data')
+            if not updated_data:
+                return jsonify({"success": False, "message": "Güncellenecek veri bulunamadı"})
+
+            result = update_table_data(user_id, file_name, updated_data)
+            
+            if isinstance(result, str) and "hata" in result.lower():
+                return jsonify({"success": False, "message": result})
+            
+            return jsonify({"success": True, "message": "Veriler başarıyla güncellendi"})
+            
         except Exception as e:
-            flash("Dosya kaydedilemedi", "file_danger")
+            print(f"Hata oluştu: {str(e)}")  # Sunucu tarafında hata loglaması
             return jsonify({"success": False, "message": f"Hata: {str(e)}"})
 
 @app.route('/analysis_processes')
