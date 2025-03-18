@@ -146,8 +146,6 @@ document.addEventListener("DOMContentLoaded", function () {
             console.log("İşlem sonucu:", data);
             if (data.success) {
               console.log("Yeni satır başarıyla eklendi ve kaydedildi");
-              // Başarılı güncelleme sonrası sayfayı yenileme
-              // window.location.reload(); // İsteğe bağlı
             } else {
               console.error("Satır eklenirken hata oluştu:", data.message);
             }

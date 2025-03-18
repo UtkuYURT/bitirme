@@ -69,6 +69,36 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  const calculateButton = document.getElementById("calculate-average");
+  if (calculateButton) {
+    calculateButton.addEventListener("click", function (e) {
+      e.preventDefault();
+
+      fetch("/mathematical_operations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ selectedValues: selectedValues }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Sunucudan hata geldi: " + response.statusText);
+          }
+          return response.json(); // JSON formatında bir yanıt bekliyoruz
+        })
+        .then((data) => {
+          // Sunucudan gelen yönlendirme URL'sine git
+          if (data.redirect_url) {
+            window.location.href = data.redirect_url;
+          }
+        })
+        .catch((error) => {
+          console.error("Veri gönderilirken hata oluştu:", error);
+        });
+    });
+  }
+
   // Temizleme butonu için yeni kod
   const clearButton = document.getElementById("clear-button");
   clearButton.addEventListener("click", function (e) {

@@ -1,6 +1,6 @@
 {% extends "partials/base.html" %} {% set show_sidebar = true %} {% set
-show_right_sidebar = false %} {% block title %}Analiz{% endblock %} {% block
-content %}
+show_right_sidebar = false %} {% block title %}Matematiksel İşlemler{% endblock
+%} {% block content %}
 
 <!-- sayfa başlangıcı -->
 
@@ -19,24 +19,24 @@ content %}
 </div>
 {% endif %} {% endwith %}
 
-<div id="file_div" data-file-name="{{ file_name }}">
+<div id="file_div">
   <div class="card file-upload-card">
     <div class="card-title">
-      <h3 class="text-center fw-bold">Analiz</h3>
-      {% if file_name %}
+      <h3 class="text-center fw-bold">
+        <!-- ! yapılan matematiksel işlem -->
+        Ortalama
+      </h3>
+      {% if selected_values %}
       <p class="text-center text-secondary">
-        Dosya: <strong>{{ file_name }}</strong>
+        Seçilmiş Sayılar: <strong>{{ selected_values | join(', ') }}</strong>
       </p>
       {% endif %}
     </div>
     <div class="card-body">
-      {% if content %}
-      <div class="table-responsive">
-        <!-- HTML Tablosu render ediliyor -->
-        {{ content|safe }}
-      </div>
+      {% if result is not none %}
+      <h5>Sonuç: {{ result }}</h5>
       {% else %}
-      <p class="text-center text-danger">Dosya içeriği bulunamadı.</p>
+      <h5>Henüz bir işlem yapılmadı.</h5>
       {% endif %}
       <div class="text-center mt-2">
         <button class="btn btn-file" type="submit">
@@ -44,14 +44,10 @@ content %}
             >Dosya İşlemlerine Geri Dön</a
           >
         </button>
-        <button class="btn btn-file" type="submit" id="clear-button">
-          <a href="#">Seçimleri Temizle</a>
-        </button>
       </div>
     </div>
   </div>
-
-  <script src="{{ url_for('static', filename='js/select-cells.js') }}"></script>
-
-  {% endblock %}
 </div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% endblock %}

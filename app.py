@@ -223,6 +223,35 @@ def analysis(file_name):
             flash("Dosya bulunamadı veya içerik mevcut değil", "file_danger")
         
         return redirect(url_for('analysis_page')) 
+    
+@app.route('/mathematical_operations', methods=['GET', 'POST'])
+def mathematical_operations():
+    if request.method == 'POST':
+        selected_values = request.get_json().get('selectedValues', [])
+
+        try:
+            numeric_values = [float(value) for value in selected_values if value.replace('.', '', 1).isdigit()]
+            if numeric_values:
+                result = average(numeric_values)
+            else:
+                result = None
+        except Exception as e:
+            return jsonify({"error": str(e)}), 400
+
+        # Sonucu ve seçilmiş sayıları session'a kaydet
+        session['result'] = result
+        session['selected_values'] = selected_values
+
+        # Yönlendirme URL'sini döndür
+        return jsonify({"redirect_url": url_for('mathematical_operations')})
+
+    else:
+        result = session.get('result', None)
+        selected_values = session.get('selected_values', [])
+        return render_template('mathematical_operations.html', result=result, selected_values=selected_values)
+    
+def average(numbers):
+    return sum(numbers) / len(numbers)
 
 if __name__ == '__main__':
     app.run(debug=True)
