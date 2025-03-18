@@ -69,33 +69,55 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
-  const calculateButton = document.getElementById("calculate-average");
-  if (calculateButton) {
-    calculateButton.addEventListener("click", function (e) {
-      e.preventDefault();
+  const averageButton = document.getElementById("calculate-average");
+  const geometricButton = document.getElementById("calculate-geometric");
+  const harmonicButton = document.getElementById("calculate-harmonic");
 
-      fetch("/mathematical_operations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ selectedValues: selectedValues }),
+  function calculate(operation) {
+    fetch("/mathematical_operations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        selectedValues: selectedValues,
+        operation: operation,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Sunucudan hata geldi: " + response.statusText);
+        }
+        return response.json();
       })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Sunucudan hata geldi: " + response.statusText);
-          }
-          return response.json(); // JSON formatında bir yanıt bekliyoruz
-        })
-        .then((data) => {
-          // Sunucudan gelen yönlendirme URL'sine git
-          if (data.redirect_url) {
-            window.location.href = data.redirect_url;
-          }
-        })
-        .catch((error) => {
-          console.error("Veri gönderilirken hata oluştu:", error);
-        });
+      .then((data) => {
+        if (data.redirect_url) {
+          window.location.href = data.redirect_url;
+        }
+      })
+      .catch((error) => {
+        console.error("Veri gönderilirken hata oluştu:", error);
+      });
+  }
+
+  if (averageButton) {
+    averageButton.addEventListener("click", function (e) {
+      e.preventDefault();
+      calculate("arithmetic");
+    });
+  }
+
+  if (geometricButton) {
+    geometricButton.addEventListener("click", function (e) {
+      e.preventDefault();
+      calculate("geometric");
+    });
+  }
+
+  if (harmonicButton) {
+    harmonicButton.addEventListener("click", function (e) {
+      e.preventDefault();
+      calculate("harmonic");
     });
   }
 

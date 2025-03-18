@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from db import init_db, sign_up, sign_in, save_files, get_files, delete_files, get_file_data, update_table_data, create_database, create_tables
 import pandas as pd
+import numpy as np
 import os
 
 app = Flask(__name__)
@@ -153,8 +154,7 @@ def view_file(file_name):
             flash("Dosya bulunamadı veya içerik mevcut değil", "file_danger")
         
         return redirect(url_for('main_page')) 
-
-    else:  # POST request
+    else: 
         try:
             data = request.get_json()
             if not data:
@@ -222,25 +222,47 @@ def analysis(file_name):
         else:
             flash("Dosya bulunamadı veya içerik mevcut değil", "file_danger")
         
-        return redirect(url_for('analysis_page')) 
+        return redirect(url_for('analysis_page')) ,
+
+OPERATIONS = {
+    'arithmetic': {
+        'function': lambda values: np.mean(values),
+        'title': 'Aritmetik Ortalama'
+    },
+    'geometric': {
+        'function': lambda values: np.prod(values) ** (1 / len(values)),
+        'title': 'Geometrik Ortalama'
+    },
+    'harmonic': {
+        'function': lambda values: len(values) / np.sum(1 / np.array(values)),
+        'title': 'Harmonik Ortalama'
+    },
+}
     
 @app.route('/mathematical_operations', methods=['GET', 'POST'])
 def mathematical_operations():
     if request.method == 'POST':
+        data = request.get_json()
         selected_values = request.get_json().get('selectedValues', [])
+        operation = data.get('operation', 'arithmetic')
 
         try:
-            numeric_values = [float(value) for value in selected_values if value.replace('.', '', 1).isdigit()]
-            if numeric_values:
-                result = average(numeric_values)
+            numeric_values = np.array([float(value) for value in selected_values if value.replace('.', '', 1).isdigit()])
+            if numeric_values.size > 0:
+                operation_data = OPERATIONS.get(operation, {})
+                result = operation_data.get('function', lambda values: None)(numeric_values)
+                title = operation_data.get('title', 'Matematiksel İşlem')
             else:
                 result = None
+                title = 'Matematiksel İşlem'
         except Exception as e:
             return jsonify({"error": str(e)}), 400
 
         # Sonucu ve seçilmiş sayıları session'a kaydet
         session['result'] = result
         session['selected_values'] = selected_values
+        session['operation'] = operation
+        session['operation_title'] = title
 
         # Yönlendirme URL'sini döndür
         return jsonify({"redirect_url": url_for('mathematical_operations')})
@@ -248,10 +270,9 @@ def mathematical_operations():
     else:
         result = session.get('result', None)
         selected_values = session.get('selected_values', [])
-        return render_template('mathematical_operations.html', result=result, selected_values=selected_values)
+        operation = session.get('operation', 'arithmetic')
+        title = session.get('operation_title', 'Matematiksel İşlem')
+        return render_template('mathematical_operations.html', result=result, selected_values=selected_values, operation=operation, title=title)
     
-def average(numbers):
-    return sum(numbers) / len(numbers)
-
 if __name__ == '__main__':
     app.run(debug=True)
