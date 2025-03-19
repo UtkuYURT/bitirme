@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama İstemcisi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f4f4f9;
+        }
+        .container {
+            width: 80%;
+            max-width: 600px;
+            text-align: center;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            resize: none;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #response {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f9f9f9;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Ollama API İstemcisi</h2>
+        <textarea id="prompt" rows="5" placeholder="Bir şeyler yazın..."></textarea>
+        <br>
+        <button onclick="sendRequest()">Gönder</button>
+        <div id="response"></div>
+    </div>
+
+    <script>
+        function sendRequest() {
+            const prompt = document.getElementById('prompt').value;
+            if (prompt.trim() === "") {
+                alert("Lütfen bir prompt girin.");
+                return;
+            }
+
+            const data = { input: prompt };
+
+            fetch('http://localhost:5000/ollama', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('response').innerHTML = `<strong>Ollama Yanıtı:</strong><br>${data.response}`;
+                } else {
+                    document.getElementById('response').innerHTML = `<strong>Hata:</strong> ${data.error}`;
+                }
+            })
+            .catch(error => {
+                console.error('Hata:', error);
+                document.getElementById('response').innerHTML = 'Bir hata oluştu. Lütfen tekrar deneyin.';
+            });
+        }
+    </script>
+</body>
+</html>

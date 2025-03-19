@@ -1,4 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask_cors import CORS  # CORS paketini ekle
 from db import init_db, sign_up, sign_in, save_files, get_files, delete_files, get_file_data, update_table_data, create_database, create_tables
 import pandas as pd
 import numpy as np
@@ -6,7 +7,9 @@ import requests
 import os
 import json
 
+
 app = Flask(__name__)
+CORS(app)
 
 app.secret_key = 'gizli_anahtar'
 
@@ -275,9 +278,14 @@ def mathematical_operations():
         operation = session.get('operation', 'arithmetic')
         title = session.get('operation_title', 'Matematiksel İşlem')
         return render_template('mathematical_operations.html', result=result, selected_values=selected_values, operation=operation, title=title)
-        
+  # Ollama chat sayfası
+@app.route('/ollama_chat')
+def ollama_chat():
+    return render_template('ollama_chat.html')  # ollama_chat.html dosyasını render et
+      
 # Ollama API 'YE İstek Gönderme
 @app.route('/ollama', methods=['POST'])
+
 def ollama_interact():
     # Kullanıcıdan gelen metni al
     user_input = request.json.get('input', '')
