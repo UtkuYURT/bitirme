@@ -54,6 +54,21 @@ def create_tables():
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_turkish_ci
         """)
 
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS log_table (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            user_id INT NOT NULL,
+            file_name VARCHAR(255) NOT NULL,
+            action_type VARCHAR(50) NOT NULL, 
+            column_name VARCHAR(255),
+            row_index INT,
+            old_value TEXT,
+            new_value TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+        """)        
+
         print("Tablolar başarıyla oluşturuldu veya zaten mevcut.")
         cur.close()
         conn.commit()
@@ -128,6 +143,29 @@ def get_file_data(user_id, file_name, file_type=None):
             except Exception as e:
                 return f"CSV dosyası okuma hatası: {e}"
 
+def log_change(user_id, file_name, action_type, column_name=None, row_index=None, old_value=None, new_value=None):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            INSERT INTO log_table (user_id, file_name, action_type, column_name, row_index, old_value, new_value, timestamp)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
+        """, (user_id, file_name, action_type, column_name, row_index, old_value, new_value))
+        mysql.connection.commit()
+        cur.close()
+    except Exception as e:
+        print(f"Loglama hatası: {str(e)}")
+
+def get_logs(file_name, user_id):
+    cur = mysql.connection.cursor()
+    cur.execute("""
+        SELECT id, action_type, column_name, row_index, old_value, new_value, timestamp FROM log_table
+        WHERE file_name = %s AND user_id = %s
+        ORDER BY timestamp DESC
+    """, (file_name, user_id))
+    logs = cur.fetchall()
+    cur.close()
+    return logs
+
 def update_table_data(user_id, file_name, updated_data):
     file_type = file_name.rsplit('.', 1)[1].lower()
     file_content = get_file_data(user_id, file_name, file_type)
@@ -141,24 +179,33 @@ def update_table_data(user_id, file_name, updated_data):
                 column_name = update['column_name']
                 if column_name in file_content.columns:
                     file_content = file_content.drop(columns=[column_name])
+                    log_change(user_id, file_name, "delete_column", column_name=column_name)
             
             elif 'add_column' in update:
                 new_column_name = update['column_name']
                 file_content[new_column_name] = ''
+                log_change(user_id, file_name, "add_column", column_name=new_column_name)
                 
             elif 'delete_row' in update:
                 row_index = update['row_index']
-                file_content = file_content.drop(index=row_index).reset_index(drop=True)
+                if 0 <= row_index < len(file_content):
+                    file_content = file_content.drop(index=row_index).reset_index(drop=True)
+                    log_change(user_id, file_name, "delete_row", row_index=row_index)
                 
             elif 'is_new_row' in update:
                 empty_row = pd.Series([''] * len(file_content.columns), index=file_content.columns)
                 file_content = pd.concat([file_content, pd.DataFrame([empty_row])], ignore_index=True)
                 file_content = file_content.fillna('')
+                log_change(user_id, file_name, "add_row")
                 
             elif 'row_index' in update and 'column_name' in update:
                 row_index = int(update['row_index'])
                 column_name = update['column_name']
                 new_value = update['new_value']
+
+                old_value = None
+                if row_index < len(file_content) and column_name in file_content.columns:
+                    old_value = file_content.loc[row_index, column_name]
 
                 # Sayısal değer kontrolü ve dönüşümü
                 try:
@@ -172,7 +219,7 @@ def update_table_data(user_id, file_name, updated_data):
                 except (ValueError, AttributeError):
                     pass  # Sayısal değer değilse olduğu gibi bırak
 
-                if column_name in file_content.columns:
+                if row_index < len(file_content) and column_name in file_content.columns:
                     file_content.loc[row_index, column_name] = new_value
                     # Sütundaki tüm değerleri kontrol et ve int'e dönüştür
                     try:
@@ -184,8 +231,8 @@ def update_table_data(user_id, file_name, updated_data):
                     except:
                         pass
                     file_content = file_content.fillna('')
-                else:
-                    print(f"Geçersiz sütun adı: {column_name}")
+                
+                log_change(user_id, file_name, "update_cell", column_name=column_name, row_index=row_index, old_value=old_value, new_value=new_value)
 
         # NaN değerleri kontrol et
         file_content = file_content.fillna('')
@@ -210,6 +257,78 @@ def update_table_data(user_id, file_name, updated_data):
         print(f"Güncelleme hatası: {str(e)}")
         return f"Güncelleme hatası: {str(e)}"
 
+def rollback_change(user_id, file_name, log_id):
+    try:
+        # Log kaydını al
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            SELECT action_type, column_name, row_index, old_value
+            FROM log_table
+            WHERE id = %s AND user_id = %s AND file_name = %s
+        """, (log_id, user_id, file_name))
+        log_entry = cur.fetchone()
+        cur.close()
+
+        if not log_entry:
+            return "Log kaydı bulunamadı."
+
+        action_type, column_name, row_index, old_value = log_entry
+
+        # Dosya içeriğini al
+        file_type = file_name.rsplit('.', 1)[1].lower()
+        file_content = get_file_data(user_id, file_name, file_type)
+
+        if isinstance(file_content, str):
+            return file_content  # Hata mesajı döndür
+
+        # İşleme göre geri alma
+        if action_type == "update_cell":
+            # Hücreyi eski değere döndür
+            if column_name in file_content.columns and 0 <= row_index < len(file_content):
+                file_content.loc[row_index, column_name] = old_value
+
+        elif action_type == "delete_row":
+            # Silinen satırı geri eklemek mümkün değil (log'da satırın tüm değerleri yok)
+            return "Satır silme işlemi geri alınamaz."
+
+        elif action_type == "add_row":
+            # Eklenen satırı sil
+            file_content = file_content.drop(index=row_index).reset_index(drop=True)
+
+        elif action_type == "delete_column":
+            # Silinen sütunu geri eklemek mümkün değil (log'da sütunun tüm değerleri yok)
+            return "Sütun silme işlemi geri alınamaz."
+
+        elif action_type == "add_column":
+            # Eklenen sütunu sil
+            if column_name in file_content.columns:
+                file_content = file_content.drop(columns=[column_name])
+
+        # Güncellenmiş dosya içeriğini kaydet
+        output = io.BytesIO()
+        if file_type == 'xlsx':
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                file_content.to_excel(writer, index=False)
+        elif file_type == 'csv':
+            file_content.to_csv(output, index=False, encoding='utf-8')
+
+        file_byte_data = output.getvalue()
+
+        cur = mysql.connection.cursor()
+        cur.execute("UPDATE user_files SET file_content = %s WHERE user_id = %s AND file_name = %s",
+                    (file_byte_data, user_id, file_name))
+        mysql.connection.commit()
+        
+        # geri alınan işlemi logdan silme
+        cur.execute("DELETE FROM log_table WHERE id = %s AND user_id = %s AND file_name = %s",
+                    (log_id, user_id, file_name))
+        mysql.connection.commit()
+        cur.close()
+
+        return "Değişiklik başarıyla geri alındı."
+    except Exception as e:
+        print(f"Geri alma hatası: {str(e)}")
+        return f"Geri alma hatası: {str(e)}"
 
 
 

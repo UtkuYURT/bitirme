@@ -44,6 +44,11 @@ content %}
             >Dosya İşlemlerine Geri Dön</a
           >
         </button>
+        <button class="btn btn-file" type="submit">
+          <a href="{{ url_for('rollback', file_name=file_name) }}"
+            >Geçmiş İşlemler</a
+          >
+        </button>
       </div>
     </div>
   </div>

@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
-from db import init_db, sign_up, sign_in, save_files, get_files, delete_files, get_file_data, update_table_data, create_database, create_tables
+from db import *
 import pandas as pd
 import numpy as np
 import os
@@ -273,6 +273,40 @@ def mathematical_operations():
         operation = session.get('operation', 'arithmetic')
         title = session.get('operation_title', 'Matematiksel İşlem')
         return render_template('mathematical_operations.html', result=result, selected_values=selected_values, operation=operation, title=title)
+    
+@app.route('/rollback', methods=['POST', 'GET'])
+def rollback():
+    if request.method == 'GET':
+        user_id = session.get('user_id')
+        file_name = request.args.get('file_name') 
+        if not user_id or not file_name:
+            flash("Eksik parametreler", "file_danger")
+            return redirect(url_for('main_page'))
+
+        logs = get_logs(file_name, user_id)  
+        if logs is None or len(logs) == 0:
+            flash("Log verileri alınamadı", "file_danger")
+            return redirect(url_for('main_page'))
+        
+        return render_template('rollback.html', logs=logs, file_name=file_name)
+        
+    elif request.method == 'POST':
+        user_id = session.get('user_id')
+        file_name = request.form.get('file_name')
+        log_id = request.form.get('log_id')
+
+        if not user_id or not file_name or not log_id:
+            flash("Eksik parametreler", "file_danger")
+            return redirect(url_for('rollback', file_name=file_name))
+
+        # Geri alma işlemini gerçekleştir
+        result = rollback_change(user_id, file_name, log_id)
+        if "başarıyla" in result:
+            flash(result, "file_success")
+        else:
+            flash(result, "file_danger")
+
+    return redirect(url_for('rollback', file_name=file_name))
     
 if __name__ == '__main__':
     app.run(debug=True)

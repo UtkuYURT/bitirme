@@ -253,10 +253,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
 document.addEventListener("DOMContentLoaded", function () {
   const addColumnButton = document.getElementById("add-column-button");
-  console.log("Sütun ekleme butonu:", addColumnButton);
 
   if (addColumnButton) {
-    console.log("Buton bulundu, event listener ekleniyor");
     addColumnButton.addEventListener("click", function () {
       console.log("Butona tıklandı");
 

@@ -1,0 +1,116 @@
+<!-- <table class="table">
+  <thead>
+    <tr>
+      <th>İşlem Türü</th>
+      <th>Sütun Adı</th>
+      <th>Satır İndeksi</th>
+      <th>Eski Değer</th>
+      <th>Yeni Değer</th>
+      <th>Zaman Damgası</th>
+      <th>Geri Al</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for log in logs %}
+    <tr>
+      <td>{{ log[1] }}</td>
+      <td>{{ log[2] }}</td>
+      <td>{{ log[3] }}</td>
+      <td>{{ log[4] }}</td>
+      <td>{{ log[5] }}</td>
+      <td>{{ log[6] }}</td>
+      <td>
+        <form method="POST" action="/rollback">
+          <input type="hidden" name="file_name" value="{{ file_name }}" />
+          <input type="hidden" name="log_id" value="{{ log[0] }}" />
+          <button type="submit" class="btn btn-danger">Geri Al</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table> -->
+
+{% extends "partials/base.html" %} {% set show_sidebar = true %} {% set
+show_right_sidebar = false %} {% block title %} Ana Sayfa {% endblock %} {%
+block content %}
+
+<!-- sayfa başlangıcı -->
+
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%}
+<div id="file_div">
+  {% for category, message in messages %} {% if category == 'file_success' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ message }}
+  </div>
+  {% elif category == 'file_danger' %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ message }}
+  </div>
+  {% endif %} {% endfor %}
+</div>
+{% endif %} {% endwith %}
+
+<div id="file_div" data-file-name="{{ file_name }}">
+  <div class="card file-upload-card">
+    <div class="card-title">
+      <h3 class="text-center fw-bold">Log Kayıtları</h3>
+    </div>
+    <div class="card-body">
+      {% if logs %}
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover">
+          <thead>
+            <tr>
+              <th>İşlem Türü</th>
+              <th>Sütun Adı</th>
+              <th>Satır İndeksi</th>
+              <th>Eski Değer</th>
+              <th>Yeni Değer</th>
+              <th>Zaman Damgası</th>
+              <th>Geri Al</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in logs %}
+            <tr>
+              <td>{{ log[1] }}</td>
+              <td>{{ log[2] }}</td>
+              <td>{{ log[3] }}</td>
+              <td>{{ log[4] }}</td>
+              <td>{{ log[5] }}</td>
+              <td>{{ log[6] }}</td>
+              <td>
+                <form method="POST" action="/rollback">
+                  <input
+                    type="hidden"
+                    name="file_name"
+                    value="{{ file_name }}"
+                  />
+                  <input type="hidden" name="log_id" value="{{ log[0] }}" />
+                  <button type="submit" class="btn btn-danger">Geri Al</button>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-center text-danger">Dosya içeriği bulunamadı.</p>
+      {% endif %}
+      <div class="text-center mt-2">
+        <button class="btn btn-file" type="submit">
+          <a href="{{ url_for('file_operations') }}"
+            >Dosya İşlemlerine Geri Dön</a
+          >
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/edit-table.js') }}"></script>
+
+  {% endblock %}
+</div>
