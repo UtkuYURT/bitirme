@@ -193,10 +193,15 @@ def update_table_data(user_id, file_name, updated_data):
                     log_change(user_id, file_name, "delete_row", row_index=row_index)
                 
             elif 'is_new_row' in update:
-                empty_row = pd.Series([''] * len(file_content.columns), index=file_content.columns)
-                file_content = pd.concat([file_content, pd.DataFrame([empty_row])], ignore_index=True)
+                row_index = update.get('row_index')
+                columns = update.get('columns', [])
+
+                new_row = {col['column_name']: col['value'] for col in columns}
+
+                file_content = pd.concat([file_content, pd.DataFrame([new_row])], ignore_index=True)
                 file_content = file_content.fillna('')
-                log_change(user_id, file_name, "add_row")
+
+                log_change(user_id, file_name, "add_row", row_index=len(file_content) - 1)
                 
             elif 'row_index' in update and 'column_name' in update:
                 row_index = int(update['row_index'])

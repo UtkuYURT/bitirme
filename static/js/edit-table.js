@@ -78,84 +78,95 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (addRowButton && table && fileDiv) {
     addRowButton.addEventListener("click", function () {
-      try {
-        const tbody = table.querySelector("tbody");
-        if (!tbody) {
-          console.error("Tablo gövdesi bulunamadı");
-          return;
+      console.log("Satır ekleme işlemi başlatıldı");
+
+      const tbody = table.querySelector("tbody");
+      if (!tbody) {
+        console.error("Tablo gövdesi bulunamadı");
+        return;
+      }
+
+      const rows = tbody.getElementsByTagName("tr");
+      const newRowIndex = rows.length; // Yeni satır indeksi
+
+      // Kullanıcıdan satır başlığı al
+      const rowTitle = prompt("Lütfen yeni satır için bir başlık girin:");
+      if (!rowTitle) {
+        alert("Satır başlığı boş bırakılamaz!");
+        return;
+      }
+
+      // Yeni satır oluştur
+      const newRow = document.createElement("tr");
+      newRow.setAttribute("data-row", newRowIndex);
+
+      // Sütun başlıklarını al
+      const headers = table.querySelectorAll("th");
+      const rowData = [];
+
+      // Her sütun için hücre oluştur
+      headers.forEach((header, index) => {
+        const columnName = header.getAttribute("data-column");
+        const cell = document.createElement("td");
+        cell.setAttribute("contenteditable", "true");
+        cell.setAttribute("data-column", columnName);
+        cell.setAttribute("data-row", newRowIndex);
+        cell.classList.add("editable-cell");
+
+        // İlk sütuna başlık ekle, diğer sütunları boş bırak
+        if (index === 0) {
+          cell.textContent = rowTitle;
+          rowData.push({
+            column_name: columnName,
+            value: rowTitle,
+          });
+        } else {
+          cell.textContent = "";
+          rowData.push({
+            column_name: columnName,
+            value: "",
+          });
         }
 
-        const rows = tbody.getElementsByTagName("tr");
-        const newRowIndex = rows.length; // Yeni satır indeksi
+        newRow.appendChild(cell);
+      });
 
-        // Yeni satır oluştur
-        const newRow = document.createElement("tr");
-        newRow.setAttribute("data-row", newRowIndex);
+      tbody.appendChild(newRow);
 
-        // Sütun başlıklarını al
-        const headers = table.querySelectorAll("th");
-        const columnData = [];
+      // Veritabanını güncelle
+      const fileName = fileDiv.getAttribute("data-file-name");
+      const updatedData = [
+        {
+          is_new_row: true,
+          row_index: newRowIndex, // Satır indeksini ekle
+          columns: rowData,
+        },
+      ];
 
-        // Her sütun için boş hücre oluştur
-        headers.forEach((header) => {
-          const columnName = header.getAttribute("data-column");
-          columnData.push({
-            column_name: columnName,
-            value: "", // Yeni satır için boş değer
-          });
+      console.log("Gönderilen veri:", updatedData);
 
-          const cell = document.createElement("td");
-          cell.setAttribute("contenteditable", "true");
-          cell.setAttribute("data-column", columnName);
-          cell.setAttribute("data-row", newRowIndex);
-          cell.classList.add("editable-cell");
-          cell.textContent = "";
-          newRow.appendChild(cell);
-        });
-
-        tbody.appendChild(newRow);
-
-        // Veritabanını güncelle
-        const fileName = fileDiv.getAttribute("data-file-name");
-        const updatedData = [
-          {
-            is_new_row: true,
-            row_index: newRowIndex, // Satır indeksini ekle
-            columns: columnData,
-          },
-        ];
-
-        console.log("Gönderilen veri:", updatedData);
-
-        // Veritabanı güncelleme isteği
-        fetch(`/main_page/${fileName}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Requested-With": "XMLHttpRequest",
-          },
-          body: JSON.stringify({
-            updated_data: updatedData,
-          }),
+      // Veritabanı güncelleme isteği
+      fetch(`/main_page/${fileName}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: JSON.stringify({
+          updated_data: updatedData,
+        }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            console.log("Yeni satır başarıyla eklendi ve kaydedildi");
+          } else {
+            console.error("Satır eklenirken hata oluştu:", data.message);
+          }
         })
-          .then((response) => {
-            console.log("Server yanıtı:", response);
-            return response.json();
-          })
-          .then((data) => {
-            console.log("İşlem sonucu:", data);
-            if (data.success) {
-              console.log("Yeni satır başarıyla eklendi ve kaydedildi");
-            } else {
-              console.error("Satır eklenirken hata oluştu:", data.message);
-            }
-          })
-          .catch((error) => {
-            console.error("AJAX hatası:", error);
-          });
-      } catch (error) {
-        console.error("İşlem sırasında hata oluştu:", error);
-      }
+        .catch((error) => {
+          console.error("AJAX hatası:", error);
+        });
     });
   } else {
     console.warn("Gerekli elementlerden biri veya birkaçı bulunamadı");
@@ -212,6 +223,13 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
+      const confirmDelete = confirm(
+        "Satır silme işlemi geri alınamaz. Devam etmek istiyor musunuz?"
+      );
+      if (!confirmDelete) {
+        return; // Kullanıcı "Hayır" seçti, işlemi iptal et
+      }
+
       const rowIndex = selectedRow.getAttribute("data-row");
       const fileName = document
         .getElementById("file_div")
@@ -256,8 +274,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
   if (addColumnButton) {
     addColumnButton.addEventListener("click", function () {
-      console.log("Butona tıklandı");
-
       // Yeni sütun adını kullanıcıdan al
       const newColumnName = prompt("Yeni sütun adını giriniz:");
 
@@ -360,6 +376,13 @@ document.addEventListener("DOMContentLoaded", function () {
       if (!selectedColumn) {
         alert("Lütfen silmek için bir sütun seçin");
         return;
+      }
+
+      const confirmDelete = confirm(
+        "Sütun silme işlemi geri alınamaz. Devam etmek istiyor musunuz?"
+      );
+      if (!confirmDelete) {
+        return; // Kullanıcı "Hayır" seçti, işlemi iptal et
       }
 
       const fileName = document
