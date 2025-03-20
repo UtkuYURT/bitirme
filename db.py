@@ -128,6 +128,7 @@ def get_file_data(user_id, file_name, file_type=None):
                 if not excel_data.empty:
                     return excel_data
                 else:
+                    print("Excel dosyası boş.")
                     return "Excel dosyası boş."
             except Exception as e:
                 return f"Excel dosyası okuma hatası: {e}"
@@ -198,10 +199,15 @@ def update_table_data(user_id, file_name, updated_data):
 
                 new_row = {col['column_name']: col['value'] for col in columns}
 
-                file_content = pd.concat([file_content, pd.DataFrame([new_row])], ignore_index=True)
-                file_content = file_content.fillna('')
+                try:
+                    file_content = pd.concat([file_content, pd.DataFrame([new_row])], ignore_index=True)
+                    file_content = file_content.fillna('')  # NaN değerleri boş string ile doldur
 
-                log_change(user_id, file_name, "add_row", row_index=len(file_content) - 1)
+                    # Log kaydı ekle
+                    log_change(user_id, file_name, "add_row", row_index=row_index)
+                except Exception as e:
+                    print(f"Yeni satır eklenirken hata oluştu: {e}")
+                    return f"Yeni satır eklenirken hata oluştu: {e}"
                 
             elif 'row_index' in update and 'column_name' in update:
                 row_index = int(update['row_index'])

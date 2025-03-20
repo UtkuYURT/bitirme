@@ -1,9 +1,11 @@
 // çıkış yap
 const logOut = document.querySelector("#logout-button");
-logOut?.addEventListener("click", () => {
-  window.location.href = "/";
-  alert("Çıkış Yapıldı");
-});
+if (logOut) {
+  logOut.addEventListener("click", () => {
+    window.location.href = "/";
+    alert("Çıkış Yapıldı");
+  });
+}
 
 // bir alt işlemdeyken başka birine tıklayınca onu kapat (sidebar içinde)
 document.addEventListener("DOMContentLoaded", () => {
@@ -24,6 +26,8 @@ document.addEventListener("DOMContentLoaded", () => {
         button.classList.remove("collapsed");
         if (collapseElement) {
           collapseElement.classList.remove("show");
+        }
+        if (icon) {
           icon.classList.remove("fa-chevron-right");
           icon.classList.add("fa-chevron-down");
         }
@@ -42,13 +46,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (isCurrentlyExpanded) {
         button.setAttribute("aria-expanded", "true");
         button.classList.add("collapsed");
-        icon.classList.remove("fa-chevron-down");
-        icon.classList.add("fa-chevron-right");
+        if (icon) {
+          icon.classList.remove("fa-chevron-down");
+          icon.classList.add("fa-chevron-right");
+        }
       } else {
         button.setAttribute("aria-expanded", "false");
         button.classList.remove("collapsed");
-        icon.classList.remove("fa-chevron-right");
-        icon.classList.add("fa-chevron-down");
+        if (icon) {
+          icon.classList.remove("fa-chevron-right");
+          icon.classList.add("fa-chevron-down");
+        }
       }
     });
   });

@@ -20,6 +20,45 @@ create_database()
 with app.app_context():
     create_tables()
 
+# ! Yardımcı Fonksiyonlar
+def is_user_logged_in():
+    return session.get('user_id')
+
+def get_file_extension(file_name):
+    return os.path.splitext(file_name)[1].lower().strip('.')
+
+def allowed_file(filename):
+    ALLOWED_EXTENSIONS = {'csv', 'xlsx'}
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def handle_file_upload(user_id, file):
+    if file and allowed_file(file.filename):
+        filename = file.filename
+        file_content = file.read()
+        save_files(user_id, filename, file_content)
+        flash("Dosya başarıyla kaydedildi", "file_success")
+    else:
+        flash("Geçersiz dosya türü.", "file_danger")
+
+def generate_table_html(df, editable=False):
+    table_id = "editable-table" if editable else "analysis-table"
+    table_html = f'<table class="table table-bordered table-hover table-striped" id="{table_id}">'
+    table_html += '<thead><tr>'
+    for col in df.columns:
+        # Sütun başlıklarına data-column özelliği ekleniyor
+        contenteditable_attr = 'contenteditable="true"' if editable else ''
+        table_html += f'<th class="editable-header" data-column="{col}" {contenteditable_attr}>{col}</th>'
+    table_html += '</tr></thead><tbody>'
+    for i, row in df.iterrows():
+        table_html += f'<tr data-row="{i}">'
+        for col in df.columns:
+            cell_class = "editable-cell" if editable else "analysis-cell"
+            contenteditable_attr = 'contenteditable="true"' if editable else ''
+            table_html += f'<td class="{cell_class}" data-column="{col}" data-row="{i}" {contenteditable_attr}>{row[col]}</td>'
+        table_html += '</tr>'
+    table_html += '</tbody></table>'
+    return table_html
+
 @app.route('/')
 def home():
     return render_template('index.html')
@@ -33,9 +72,8 @@ def sign_in_route():
         if user:
             session['user_id'] = user[0]
             return redirect(url_for('file_operations')) 
-        else:
-            flash("Giriş Başarısız", "login_danger")
-            return redirect(url_for('home')) 
+        flash("Giriş Başarısız", "login_danger")
+        return redirect(url_for('home')) 
 
 @app.route('/register')
 def register():
@@ -51,47 +89,36 @@ def sign_up_route():
             sign_up(email, password1)
             flash("Kayıt Başarılı", "login_success")
             return redirect(url_for('home')) 
-        else:
-            flash("Kayıt Başarısız", "login_danger")
-            return redirect(url_for('register'))
+        flash("Kayıt Başarısız", "login_danger")
+        return redirect(url_for('register'))
 
 @app.route('/file_operations')
 def file_operations():
-    user_id = session.get('user_id')
+    user_id = is_user_logged_in()
     if user_id:
         files = get_files(user_id) 
         return render_template("file_operations.html", files=files)
-    else:
-        flash("Kullanıcı bulunamadı", "file_danger")
-        return redirect(url_for("/"))
-
-ALLOWED_EXTENSIONS = {'csv', 'xlsx'}
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    flash("Kullanıcı bulunamadı", "file_danger")
+    return redirect(url_for("home"))
 
 @app.route('/upload_file', methods=['POST'])
 def upload_file():
     if request.method == 'POST':
-        user_id = session.get('user_id')
+        user_id = is_user_logged_in()
         if user_id:
             file = request.files.get('file')
-            if file and allowed_file(file.filename): 
-                filename = file.filename
-                file_content = file.read()
-                save_files(user_id, filename, file_content)
-                flash("Dosya başarıyla kaydedildi", "file_success")
-                return redirect(url_for('file_operations'))
+            if file:
+                handle_file_upload(user_id, file)
             else:
-                flash("Geçersiz dosya türü.", "file_danger")
-                return redirect(url_for('file_operations'))
+                flash("Dosya alınamadı. Lütfen tekrar deneyin.", "file_danger")
         else:
             flash("Kullanıcı bulunamadı", "file_danger")
-            return redirect(url_for("/"))
+        return redirect(url_for("file_operations"))
 
 @app.route('/delete_file', methods=['POST'])
 def delete_file():
     if request.method == 'POST':
-        user_id = session.get('user_id')
+        user_id = is_user_logged_in()
         if user_id:
             file_name = request.form.get('file_name') 
             if file_name:
@@ -110,120 +137,70 @@ def delete_file():
 def main_page():
     return render_template('main_page.html')
 
-def generate_editable_table(df):
-    table_html = '<table class="table table-bordered table-hover table-striped" id="editable-table">'
-
-    table_html += '<thead><tr>'
-    for col in df.columns:
-        table_html += f'<th contenteditable="true" data-column="{col}" class="editable-header">{col}</th>'
-    table_html += '</tr></thead>'
-    
-    table_html += '<tbody>'
-    for i, row in df.iterrows():
-        table_html += f'<tr data-row="{i}">' 
-        for col in df.columns:
-            table_html += f'<td contenteditable="true" data-column="{col}" data-row="{i}" class="editable-cell">{row[col]}</td>'
-        table_html += '</tr>'
-    table_html += '</tbody></table>'
-
-    return table_html
-
 @app.route('/main_page/<file_name>', methods=['GET', 'POST'])
 def view_file(file_name):
-    user_id = session.get('user_id')
+    user_id = is_user_logged_in()
 
     if not user_id:
         flash("Kullanıcı giriş yapmamış", "file_danger")
         return redirect(url_for('login'))
 
     if request.method == 'GET':
-        file_extension = os.path.splitext(file_name)[1].lower()
+        file_extension = get_file_extension(file_name)
+        try:
+            file_content = get_file_data(user_id, file_name, file_type=file_extension)
 
-        if file_extension == '.xlsx':
-            file_content = get_file_data(user_id, file_name, file_type='xlsx')
-        else:
-            file_content = get_file_data(user_id, file_name, file_type='csv')
+            if file_content is None or not isinstance(file_content, pd.DataFrame):
+                flash("Dosya bulunamadı veya içerik mevcut değil", "file_danger")
+                return redirect(url_for('file_operations'))
 
-        if file_content is not None and isinstance(file_content, pd.DataFrame):
-            if not file_content.empty:
-                table_html = generate_editable_table(file_content)
-                return render_template('main_page.html', file_name=file_name, content=table_html)
-            else:
+            if file_content.empty:
                 flash("Dosya boş", "file_danger")
-        else:
-            flash("Dosya bulunamadı veya içerik mevcut değil", "file_danger")
-        
-        return redirect(url_for('main_page')) 
+                return redirect(url_for('file_operations'))
+
+            table_html = generate_table_html(file_content, editable=True)
+            return render_template('main_page.html', file_name=file_name, content=table_html)
+
+        except Exception as e:
+            print(f"Hata oluştu: {e}")
+            flash("Bir hata oluştu. Lütfen tekrar deneyin.", "file_danger")
+            return redirect(url_for('file_operations'))
     else: 
         try:
             data = request.get_json()
-            if not data:
-                return jsonify({"success": False, "message": "Veri alınamadı"})
-            
-            updated_data = data.get('updated_data')
-            if not updated_data:
-                return jsonify({"success": False, "message": "Güncellenecek veri bulunamadı"})
-
+            updated_data = data.get('updated_data', [])
             result = update_table_data(user_id, file_name, updated_data)
-            
             if isinstance(result, str) and "hata" in result.lower():
                 return jsonify({"success": False, "message": result})
-            
             return jsonify({"success": True, "message": "Veriler başarıyla güncellendi"})
-            
         except Exception as e:
-            print(f"Hata oluştu: {str(e)}")  # Sunucu tarafında hata loglaması
+            print(f"Hata oluştu: {str(e)}")
             return jsonify({"success": False, "message": f"Hata: {str(e)}"})
-
+        
 @app.route('/analysis_processes')
 def analysis_page():
     return render_template('analysis.html')
 
-def generate_table(df):
-    table_html = '<table class="table table-bordered table-hover table-striped" id="analysis-table">'
-
-    table_html += '<thead><tr>'
-    for col in df.columns:
-        table_html += f'<th class="analysis-header">{col}</th>'
-    table_html += '</tr></thead>'
-    
-    table_html += '<tbody>'
-    for i, row in df.iterrows():
-        table_html += f'<tr data-row="{i}">' 
-        for col in df.columns:
-            table_html += f'<td class="analysis-cell">{row[col]}</td>'
-        table_html += '</tr>'
-    table_html += '</tbody></table>'
-
-    return table_html
-
 @app.route('/analysis_processes/<file_name>', methods=['GET', 'POST'])
 def analysis(file_name):
-    user_id = session.get('user_id')
+    user_id = is_user_logged_in()
 
     if not user_id:
         flash("Kullanıcı giriş yapmamış", "file_danger")
         return redirect(url_for('login'))
 
     if request.method == 'GET':
-        file_extension = os.path.splitext(file_name)[1].lower()
-
-        if file_extension == '.xlsx':
-            file_content = get_file_data(user_id, file_name, file_type='xlsx')
-        else:
-            file_content = get_file_data(user_id, file_name, file_type='csv')
-
+        file_extension = get_file_extension(file_name)
+        file_content = get_file_data(user_id, file_name, file_type=file_extension)
         if file_content is not None and isinstance(file_content, pd.DataFrame):
             if not file_content.empty:
-                table_html = generate_table(file_content)
+                table_html = generate_table_html(file_content, editable=False)
                 return render_template('analysis.html', file_name=file_name, content=table_html)
-            else:
-                flash("Dosya boş", "file_danger")
+            flash("Dosya boş", "file_danger")
         else:
             flash("Dosya bulunamadı veya içerik mevcut değil", "file_danger")
+        return redirect(url_for('file_operations'))
         
-        return redirect(url_for('analysis_page')) ,
-
 OPERATIONS = {
     'arithmetic': {
         'function': lambda values: np.mean(values),
@@ -276,22 +253,20 @@ def mathematical_operations():
     
 @app.route('/rollback', methods=['POST', 'GET'])
 def rollback():
+    user_id = is_user_logged_in()
     if request.method == 'GET':
-        user_id = session.get('user_id')
         file_name = request.args.get('file_name') 
         if not user_id or not file_name:
             flash("Eksik parametreler", "file_danger")
             return redirect(url_for('main_page'))
 
         logs = get_logs(file_name, user_id)  
-        if logs is None or len(logs) == 0:
+        if not logs:
             flash("Log verileri alınamadı", "file_danger")
             return redirect(url_for('main_page'))
         
         return render_template('rollback.html', logs=logs, file_name=file_name)
-        
-    elif request.method == 'POST':
-        user_id = session.get('user_id')
+    else:
         file_name = request.form.get('file_name')
         log_id = request.form.get('log_id')
 
@@ -299,14 +274,9 @@ def rollback():
             flash("Eksik parametreler", "file_danger")
             return redirect(url_for('rollback', file_name=file_name))
 
-        # Geri alma işlemini gerçekleştir
         result = rollback_change(user_id, file_name, log_id)
-        if "başarıyla" in result:
-            flash(result, "file_success")
-        else:
-            flash(result, "file_danger")
-
-    return redirect(url_for('rollback', file_name=file_name))
+        flash(result, "file_success" if "başarıyla" in result else "file_danger")
+        return redirect(url_for('rollback', file_name=file_name))
     
 if __name__ == '__main__':
     app.run(debug=True)
