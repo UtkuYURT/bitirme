@@ -6,6 +6,76 @@ import io
 
 mysql = MySQL()
 
+# ! Yardımcı Fonksiyonlar
+def _read_excel(byte_data):
+    try:
+        excel_data = pd.read_excel(io.BytesIO(byte_data), engine='openpyxl')
+        excel_data.columns = ['' if 'Unnamed' in col else col for col in excel_data.columns]
+        return excel_data if not excel_data.empty else None
+    except Exception as e:
+        print(f"Excel dosyası okuma hatası: {str(e)}")
+        return None
+
+def _read_csv(byte_data):
+    try:
+        csv_data = pd.read_csv(io.BytesIO(byte_data))
+        csv_data.columns = ['' if 'Unnamed' in col else col for col in csv_data.columns]
+        return csv_data if not csv_data.empty else None
+    except Exception as e:
+        print(f"CSV dosyası okuma hatası: {str(e)}")
+        return None
+
+def _delete_column(file_content, user_id, file_name, update):
+    column_name = update['column_name']
+    if column_name in file_content.columns:
+        file_content.drop(columns=[column_name], inplace=True)
+        log_change(user_id, file_name, "delete_column", column_name=column_name)
+
+def _add_column(file_content, user_id, file_name, update):
+    new_column_name = update['column_name']
+    file_content[new_column_name] = ''
+    log_change(user_id, file_name, "add_column", column_name=new_column_name)
+
+def _delete_row(file_content, user_id, file_name, update):
+    row_index = update['row_index']
+    if 0 <= row_index < len(file_content):
+        file_content.drop(index=row_index, inplace=True)
+        file_content.reset_index(drop=True, inplace=True)
+        log_change(user_id, file_name, "delete_row", row_index=row_index)
+
+def _add_row(file_content, user_id, file_name, update):
+    row_index = update.get('row_index')
+    columns = update.get('columns', [])
+    new_row = {col['column_name']: col['value'] for col in columns}
+    file_content.loc[len(file_content)] = new_row
+    log_change(user_id, file_name, "add_row", row_index=row_index)
+
+def _update_cell(file_content, user_id, file_name, update):
+    row_index = int(update['row_index'])
+    column_name = update['column_name']
+    new_value = update['new_value']
+
+    if row_index < len(file_content) and column_name in file_content.columns:
+        old_value = file_content.at[row_index, column_name]
+        file_content.at[row_index, column_name] = new_value
+        log_change(user_id, file_name, "update_cell", column_name=column_name, row_index=row_index, old_value=old_value, new_value=new_value)
+
+def _save_file_content(user_id, file_name, file_content, file_type):
+    output = io.BytesIO()
+    if file_type == 'xlsx':
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            file_content.to_excel(writer, index=False)
+    elif file_type == 'csv':
+        file_content.to_csv(output, index=False, encoding='utf-8')
+
+    file_byte_data = output.getvalue()
+    cur = mysql.connection.cursor()
+    cur.execute("UPDATE user_files SET file_content = %s WHERE user_id = %s AND file_name = %s",
+                (file_byte_data, user_id, file_name))
+    mysql.connection.commit()
+    cur.close()
+
+# ! Veritabanı İşlemleri
 def init_db(app):
     global mysql
     mysql = MySQL(app)
@@ -118,31 +188,19 @@ def get_file_data(user_id, file_name, file_type=None):
     file_data = cur.fetchone()
     cur.close()
 
-    if file_data and file_data[0]:
-        byte_data = file_data[0]
+    if not file_data or not file_data[0]:
+        print("Dosya içeriği bulunamadı veya boş.")
+        return None
+    
+    byte_data = file_data[0]
 
-        if file_type == 'xlsx':
-            try:
-                excel_data = pd.read_excel(io.BytesIO(byte_data), engine='openpyxl')
-                excel_data.columns = ['' if 'Unnamed' in col else col for col in excel_data.columns]
-                if not excel_data.empty:
-                    return excel_data
-                else:
-                    print("Excel dosyası boş.")
-                    return "Excel dosyası boş."
-            except Exception as e:
-                return f"Excel dosyası okuma hatası: {e}"
-
-        elif file_type == 'csv':
-            try:
-                csv_data = pd.read_csv(io.BytesIO(byte_data))
-                csv_data.columns = ['' if 'Unnamed' in col else col for col in csv_data.columns]
-                if not csv_data.empty:
-                    return csv_data
-                else:
-                    return "CSV dosyası boş."
-            except Exception as e:
-                return f"CSV dosyası okuma hatası: {e}"
+    if file_type == 'xlsx':
+        return _read_excel(byte_data)
+    elif file_type == 'csv':
+        return _read_csv(byte_data)
+    else:
+        print(f"Desteklenmeyen dosya türü: {file_type}")
+        return None
 
 def log_change(user_id, file_name, action_type, column_name=None, row_index=None, old_value=None, new_value=None):
     try:
@@ -177,96 +235,25 @@ def update_table_data(user_id, file_name, updated_data):
     try:
         for update in updated_data:
             if 'delete_column' in update:  # Sütun silme
-                column_name = update['column_name']
-                if column_name in file_content.columns:
-                    file_content = file_content.drop(columns=[column_name])
-                    log_change(user_id, file_name, "delete_column", column_name=column_name)
+                _delete_column(file_content, user_id, file_name, update)
             
             elif 'add_column' in update:
-                new_column_name = update['column_name']
-                file_content[new_column_name] = ''
-                log_change(user_id, file_name, "add_column", column_name=new_column_name)
+                _add_column(file_content, user_id, file_name, update)
                 
             elif 'delete_row' in update:
-                row_index = update['row_index']
-                if 0 <= row_index < len(file_content):
-                    file_content = file_content.drop(index=row_index).reset_index(drop=True)
-                    log_change(user_id, file_name, "delete_row", row_index=row_index)
+                _delete_row(file_content, user_id, file_name, update)
                 
             elif 'is_new_row' in update:
-                row_index = update.get('row_index')
-                columns = update.get('columns', [])
-
-                new_row = {col['column_name']: col['value'] for col in columns}
-
-                try:
-                    file_content = pd.concat([file_content, pd.DataFrame([new_row])], ignore_index=True)
-                    file_content = file_content.fillna('')  # NaN değerleri boş string ile doldur
-
-                    # Log kaydı ekle
-                    log_change(user_id, file_name, "add_row", row_index=row_index)
-                except Exception as e:
-                    print(f"Yeni satır eklenirken hata oluştu: {e}")
-                    return f"Yeni satır eklenirken hata oluştu: {e}"
-                
+                _add_row(file_content, user_id, file_name, update)
             elif 'row_index' in update and 'column_name' in update:
-                row_index = int(update['row_index'])
-                column_name = update['column_name']
-                new_value = update['new_value']
+                _update_cell(file_content, user_id, file_name, update)
 
-                old_value = None
-                if row_index < len(file_content) and column_name in file_content.columns:
-                    old_value = file_content.loc[row_index, column_name]
-
-                # Sayısal değer kontrolü ve dönüşümü
-                try:
-                    if new_value.strip().isdigit():  # Tam sayı kontrolü
-                        new_value = int(new_value)
-                    elif new_value.replace('.', '', 1).isdigit():  # Ondalık sayı kontrolü
-                        if float(new_value).is_integer():  # Eğer ondalık kısmı 0 ise
-                            new_value = int(float(new_value))
-                        else:
-                            new_value = float(new_value)
-                except (ValueError, AttributeError):
-                    pass  # Sayısal değer değilse olduğu gibi bırak
-
-                if row_index < len(file_content) and column_name in file_content.columns:
-                    file_content.loc[row_index, column_name] = new_value
-                    # Sütundaki tüm değerleri kontrol et ve int'e dönüştür
-                    try:
-                        if all(str(x).strip().isdigit() or (isinstance(x, (int, float)) and float(x).is_integer()) 
-                            for x in file_content[column_name] if pd.notna(x) and str(x).strip()):
-                            file_content[column_name] = file_content[column_name].apply(
-                                lambda x: int(float(x)) if pd.notna(x) and str(x).strip() else x
-                            )
-                    except:
-                        pass
-                    file_content = file_content.fillna('')
-                
-                log_change(user_id, file_name, "update_cell", column_name=column_name, row_index=row_index, old_value=old_value, new_value=new_value)
-
-        # NaN değerleri kontrol et
-        file_content = file_content.fillna('')
-
-        output = io.BytesIO()
-        if file_type == 'xlsx':
-            with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                file_content.to_excel(writer, index=False)
-        elif file_type == 'csv':
-            file_content.to_csv(output, index=False, encoding='utf-8')
-
-        file_byte_data = output.getvalue()
-
-        cur = mysql.connection.cursor()
-        cur.execute("UPDATE user_files SET file_content = %s WHERE user_id = %s AND file_name = %s",
-                    (file_byte_data, user_id, file_name))
-        mysql.connection.commit()
-        cur.close()
+        _save_file_content(user_id, file_name, file_content, file_type)
         return True
-
     except Exception as e:
         print(f"Güncelleme hatası: {str(e)}")
-        return f"Güncelleme hatası: {str(e)}"
+        return f"Güncelleme hatası: {str(e)}"    
+           
 
 def rollback_change(user_id, file_name, log_id):
     try:

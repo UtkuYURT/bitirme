@@ -59,6 +59,7 @@ def generate_table_html(df, editable=False):
     table_html += '</tbody></table>'
     return table_html
 
+# ! Routes
 @app.route('/')
 def home():
     return render_template('index.html')
