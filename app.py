@@ -258,6 +258,34 @@ def mathematical_operations():
         return render_template('mathematical_operations.html', result=result, selected_values=selected_values, operation=operation, title=title)
   # Ollama chat sayfası
 
+@app.route('/rollback', methods=['POST', 'GET'])
+def rollback():
+    user_id = is_user_logged_in()
+    if request.method == 'GET':
+        file_name = request.args.get('file_name') 
+        if not user_id or not file_name:
+            flash("Eksik parametreler", "file_danger")
+            return redirect(url_for('main_page'))
+
+        logs = get_logs(file_name, user_id)  
+        if not logs:
+            flash("Log verileri alınamadı", "file_danger")
+            return redirect(url_for('main_page'))
+        
+        return render_template('rollback.html', logs=logs, file_name=file_name)
+    else:
+        file_name = request.form.get('file_name')
+        log_id = request.form.get('log_id')
+
+        if not user_id or not file_name or not log_id:
+            flash("Eksik parametreler", "file_danger")
+            return redirect(url_for('rollback', file_name=file_name))
+
+        result = rollback_change(user_id, file_name, log_id)
+        flash(result, "file_success" if "başarıyla" in result else "file_danger")
+        return redirect(url_for('rollback', file_name=file_name))
+    
+# !! OLLAMA 
 @app.route('/ollama_chat')
 def ollama_chat():
     return render_template('ollama_chat.html')  # ollama_chat.html dosyasını render et
@@ -300,33 +328,7 @@ def ollama_interact():
             return jsonify({"error": f"Streaming işleme hatası: {str(e)}"}), 500
     else:
         return jsonify({"error": "Ollama yanıt vermedi", "status_code": response.status_code}), 500
+# !! OLLLAMA 
 
-@app.route('/rollback', methods=['POST', 'GET'])
-def rollback():
-    user_id = is_user_logged_in()
-    if request.method == 'GET':
-        file_name = request.args.get('file_name') 
-        if not user_id or not file_name:
-            flash("Eksik parametreler", "file_danger")
-            return redirect(url_for('main_page'))
-
-        logs = get_logs(file_name, user_id)  
-        if not logs:
-            flash("Log verileri alınamadı", "file_danger")
-            return redirect(url_for('main_page'))
-        
-        return render_template('rollback.html', logs=logs, file_name=file_name)
-    else:
-        file_name = request.form.get('file_name')
-        log_id = request.form.get('log_id')
-
-        if not user_id or not file_name or not log_id:
-            flash("Eksik parametreler", "file_danger")
-            return redirect(url_for('rollback', file_name=file_name))
-
-        result = rollback_change(user_id, file_name, log_id)
-        flash(result, "file_success" if "başarıyla" in result else "file_danger")
-        return redirect(url_for('rollback', file_name=file_name))
-    
 if __name__ == '__main__':
     app.run(debug=True)
