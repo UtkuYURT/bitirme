@@ -1,52 +1,71 @@
 document.addEventListener("DOMContentLoaded", function () {
   // Tüm seçili hücreleri tutacak ana dizi
-  let selectedCells = []; // Seçili hücrelerin DOM referanslarını tutar
+  let selectedCells = [];
 
-  // Tüm td elementlerini seç
   const cells = document.querySelectorAll("td");
 
-  // Tüm tr elementlerini seç (satır başlıkları için)
   const rows = document.querySelectorAll("tr");
 
-  // Tüm sütun başlıklarını seç
   const headers = document.querySelectorAll("th");
+
+  /**
+   * Satırdaki hücrelerin seçimini değiştirir.
+   * @param {HTMLTableRowElement} row - İşlem yapılacak satır.
+   * @param {boolean} select - Seçim durumu (true: seç, false: kaldır).
+   */
+  function toggleRowSelection(row, select) {
+    Array.from(row.cells).forEach((cell, index) => {
+      if (index > 0) {
+        // İlk hücreyi (satır başlığı) hariç tut
+        if (select) {
+          if (!selectedCells.includes(cell)) {
+            cell.classList.add("selected");
+            selectedCells.push(cell);
+          }
+        } else {
+          cell.classList.remove("selected");
+          selectedCells = selectedCells.filter(
+            (selectedCell) => selectedCell !== cell
+          );
+        }
+      }
+    });
+  }
+
+  /**
+   * Sütundaki hücrelerin seçimini değiştirir.
+   * @param {number} columnIndex - İşlem yapılacak sütunun indeksi.
+   * @param {boolean} select - Seçim durumu (true: seç, false: kaldır).
+   */
+  function toggleColumnSelection(columnIndex, select) {
+    rows.forEach((row) => {
+      const cell = row.cells[columnIndex];
+      if (cell) {
+        if (select) {
+          if (!selectedCells.includes(cell)) {
+            cell.classList.add("selected");
+            selectedCells.push(cell);
+          }
+        } else {
+          cell.classList.remove("selected");
+          selectedCells = selectedCells.filter(
+            (selectedCell) => selectedCell !== cell
+          );
+        }
+      }
+    });
+  }
 
   // Satır başlığına tıklama (tüm satırı seçmek veya seçimi kaldırmak için)
   rows.forEach((row) => {
     const firstCell = row.cells[0]; // Satır başlığı (ilk hücre)
     if (firstCell) {
       firstCell.addEventListener("click", function () {
-        let isRowSelected = true;
+        const isRowSelected = Array.from(row.cells).every(
+          (cell, index) => index === 0 || cell.classList.contains("selected")
+        );
 
-        // Kontrol: Satırdaki tüm hücreler (ilk hücre hariç) seçili mi?
-        Array.from(row.cells).forEach((cell, index) => {
-          if (index > 0 && !cell.classList.contains("selected")) {
-            isRowSelected = false;
-          }
-        });
-
-        // Eğer satır zaten seçiliyse, seçimi kaldır
-        if (isRowSelected) {
-          Array.from(row.cells).forEach((cell, index) => {
-            if (index > 0) {
-              // İlk hücreyi (satır başlığı) hariç tut
-              cell.classList.remove("selected");
-              selectedCells = selectedCells.filter(
-                (selectedCell) => selectedCell !== cell
-              );
-            }
-          });
-        } else {
-          // Eğer satır seçili değilse, seç
-          Array.from(row.cells).forEach((cell, index) => {
-            if (index > 0 && !selectedCells.includes(cell)) {
-              // İlk hücreyi (satır başlığı) hariç tut
-              cell.classList.add("selected");
-              selectedCells.push(cell);
-            }
-          });
-        }
-
+        toggleRowSelection(row, !isRowSelected); // Seçimi tersine çevir
         console.log("Tüm seçili hücreler (satır):", selectedCells);
       });
     }
@@ -55,38 +74,12 @@ document.addEventListener("DOMContentLoaded", function () {
   // Sütun başlığına tıklama (tüm sütunu seçmek veya seçimi kaldırmak için)
   headers.forEach((header, index) => {
     header.addEventListener("click", function () {
-      let isColumnSelected = true;
-
-      // Kontrol: Sütundaki tüm hücreler seçili mi?
-      rows.forEach((row) => {
+      const isColumnSelected = Array.from(rows).every((row) => {
         const cell = row.cells[index];
-        if (cell && !cell.classList.contains("selected")) {
-          isColumnSelected = false;
-        }
+        return cell && cell.classList.contains("selected");
       });
 
-      // Eğer sütun zaten seçiliyse, seçimi kaldır
-      if (isColumnSelected) {
-        rows.forEach((row) => {
-          const cell = row.cells[index];
-          if (cell) {
-            cell.classList.remove("selected");
-            selectedCells = selectedCells.filter(
-              (selectedCell) => selectedCell !== cell
-            );
-          }
-        });
-      } else {
-        // Eğer sütun seçili değilse, seç
-        rows.forEach((row) => {
-          const cell = row.cells[index];
-          if (cell && !selectedCells.includes(cell)) {
-            cell.classList.add("selected");
-            selectedCells.push(cell);
-          }
-        });
-      }
-
+      toggleColumnSelection(index, !isColumnSelected); // Seçimi tersine çevir
       console.log("Tüm seçili hücreler (sütun):", selectedCells);
     });
   });
