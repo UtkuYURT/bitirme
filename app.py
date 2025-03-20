@@ -1,10 +1,15 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from db import *
+from flask_cors import CORS 
 import pandas as pd
 import numpy as np
+import requests
 import os
+import json
+
 
 app = Flask(__name__)
+CORS(app)
 
 app.secret_key = 'gizli_anahtar'
 
@@ -251,7 +256,51 @@ def mathematical_operations():
         operation = session.get('operation', 'arithmetic')
         title = session.get('operation_title', 'Matematiksel İşlem')
         return render_template('mathematical_operations.html', result=result, selected_values=selected_values, operation=operation, title=title)
-    
+  # Ollama chat sayfası
+
+@app.route('/ollama_chat')
+def ollama_chat():
+    return render_template('ollama_chat.html')  # ollama_chat.html dosyasını render et
+      
+# Ollama API 'YE İstek Gönderme
+@app.route('/ollama', methods=['POST'])
+def ollama_interact():
+    # Kullanıcıdan gelen metni al
+    user_input = request.json.get('input', '')
+
+    # Ollama API'sine istek gönder
+    response = requests.post(
+        'http://127.0.0.1:11434/api/generate',  # Ollama sunucu adresi
+        json={
+            "model": "mistral",  # Buraya kullanmak istediğin modeli yaz
+            "prompt": user_input
+        },
+        stream=True  # Streaming yanıtları işlemek için
+    )
+
+    # Yanıtı parça parça işlemek için birikmiş metni tutacak bir değişken
+    full_response = ""
+
+    # Streaming yanıtları işleme
+    if response.status_code == 200:
+        try:
+            for line in response.iter_lines():
+                if line:  # Boş olmayan satırları işle
+                    try:
+                        # Her bir JSON nesnesini ayrıştır
+                        json_line = json.loads(line.decode('utf-8'))
+                        # Yanıt metnini biriktir
+                        full_response += json_line.get("response", "")
+                    except json.JSONDecodeError as e:
+                        print(f"JSON ayrıştırma hatası: {str(e)}")
+            
+            # Tam yanıtı döndür
+            return jsonify({"success": True, "response": full_response})
+        except Exception as e:
+            return jsonify({"error": f"Streaming işleme hatası: {str(e)}"}), 500
+    else:
+        return jsonify({"error": "Ollama yanıt vermedi", "status_code": response.status_code}), 500
+
 @app.route('/rollback', methods=['POST', 'GET'])
 def rollback():
     user_id = is_user_logged_in()
