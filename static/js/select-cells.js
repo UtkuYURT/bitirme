@@ -3,9 +3,7 @@ document.addEventListener("DOMContentLoaded", function () {
   let selectedCells = [];
 
   const cells = document.querySelectorAll("td");
-
   const rows = document.querySelectorAll("tr");
-
   const headers = document.querySelectorAll("th");
 
   /**
@@ -122,4 +120,67 @@ document.addEventListener("DOMContentLoaded", function () {
     selectedCells = []; // Diziyi temizle
     console.log("Seçimler temizlendi");
   });
+
+  /**
+   * Flask'a seçili hücreleri ve işlem türünü gönderir.
+   * @param {string} operation - İşlem türü (örneğin, "arithmetic").
+   */
+  function calculate(operation) {
+    const selectedValues = selectedCells.map((cell) => cell.textContent.trim());
+
+    if (selectedValues.length === 0) {
+      alert("Lütfen önce hücreleri seçin.");
+      return;
+    }
+
+    fetch("/mathematical_operations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        selectedValues: selectedValues,
+        operation: operation,
+      }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Sunucudan hata geldi: " + response.statusText);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data.redirect_url) {
+          window.location.href = data.redirect_url;
+        }
+      })
+      .catch((error) => {
+        console.error("Veri gönderilirken hata oluştu:", error);
+      });
+  }
+
+  const averageButton = document.getElementById("calculate-average");
+  const geometricButton = document.getElementById("calculate-geometric");
+  const harmonicButton = document.getElementById("calculate-harmonic");
+
+  if (averageButton) {
+    averageButton.addEventListener("click", function (e) {
+      e.preventDefault();
+      calculate("arithmetic");
+    });
+  }
+
+  if (geometricButton) {
+    geometricButton.addEventListener("click", function (e) {
+      e.preventDefault();
+      calculate("geometric");
+    });
+  }
+
+  if (harmonicButton) {
+    harmonicButton.addEventListener("click", function (e) {
+      e.preventDefault();
+      calculate("harmonic");
+    });
+  }
 });
