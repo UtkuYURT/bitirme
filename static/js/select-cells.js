@@ -159,28 +159,19 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  const averageButton = document.getElementById("calculate-average");
-  const geometricButton = document.getElementById("calculate-geometric");
-  const harmonicButton = document.getElementById("calculate-harmonic");
+  const operationButtons = [
+    { id: "calculate-average", operation: "arithmetic" },
+    { id: "calculate-geometric", operation: "geometric" },
+    { id: "calculate-harmonic", operation: "harmonic" },
+    { id: "calculate-median", operation: "median" },
+  ];
 
-  if (averageButton) {
-    averageButton.addEventListener("click", function (e) {
-      e.preventDefault();
-      calculate("arithmetic");
-    });
-  }
-
-  if (geometricButton) {
-    geometricButton.addEventListener("click", function (e) {
-      e.preventDefault();
-      calculate("geometric");
-    });
-  }
-
-  if (harmonicButton) {
-    harmonicButton.addEventListener("click", function (e) {
-      e.preventDefault();
-      calculate("harmonic");
-    });
-  }
+  operationButtons.forEach(({ id, operation }) => {
+    const button = document.getElementById(id);
+    if (button)
+      button.addEventListener("click", (e) => {
+        e.preventDefault();
+        calculate(operation);
+      });
+  });
 });

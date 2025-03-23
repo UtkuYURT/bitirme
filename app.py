@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
 from db import *
 from flask_cors import CORS 
 import pandas as pd
@@ -6,6 +6,8 @@ import numpy as np
 import requests
 import os
 import json
+from io import BytesIO
+import matplotlib.pyplot as plt
 
 
 app = Flask(__name__)
@@ -63,6 +65,20 @@ def generate_table_html(df, editable=False):
         table_html += '</tr>'
     table_html += '</tbody></table>'
     return table_html
+
+def create_dynamic_plot(values, operation, result):
+    result = round(result, 2)
+    plt.figure(figsize=(6, 4))
+    plt.plot(values, label='Veri Seti', marker='o', color='blue')
+    plt.axhline(result, color='red', linestyle='--', label=f'{OPERATIONS.get(operation, {}).get("title", "Matematiksel İşlem")}: {result}')
+    plt.title(f'{OPERATIONS.get(operation, {}).get("title", "Matematiksel İşlem")} Grafiği')
+    plt.xlabel('Veri Sırası')
+    plt.ylabel('Değer')
+    plt.legend()
+    img = BytesIO()
+    plt.savefig(img, format='png')
+    img.seek(0)
+    return img
 
 # ! Routes
 @app.route('/')
@@ -220,6 +236,10 @@ OPERATIONS = {
         'function': lambda values: len(values) / np.sum(1 / np.array(values)),
         'title': 'Harmonik Ortalama'
     },
+    'median': {
+        'function': lambda values: np.median(values),
+        'title': 'Medyan'   
+    }
 }
     
 @app.route('/mathematical_operations', methods=['GET', 'POST'])
@@ -256,7 +276,21 @@ def mathematical_operations():
         operation = session.get('operation', 'arithmetic')
         title = session.get('operation_title', 'Matematiksel İşlem')
         return render_template('mathematical_operations.html', result=result, selected_values=selected_values, operation=operation, title=title)
-  # Ollama chat sayfası
+
+@app.route('/plot')
+def plot():
+    selected_values = session.get('selected_values', [])
+    result = session.get('result', None)
+    operation = session.get('operation', 'arithmetic')
+
+    if not selected_values or result is None:
+        return "Grafik oluşturulacak veri bulunamadı.", 400
+
+    # Sayısal değerlere dönüştür
+    numeric_values = [float(value) for value in selected_values if value.replace('.', '', 1).isdigit()]
+
+    img = create_dynamic_plot(numeric_values, operation, result)
+    return send_file(img, mimetype='image/png')
 
 @app.route('/rollback', methods=['POST', 'GET'])
 def rollback():
