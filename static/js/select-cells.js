@@ -36,7 +36,8 @@ document.addEventListener("DOMContentLoaded", function () {
    * @param {boolean} select - Seçim durumu (true: seç, false: kaldır).
    */
   function toggleColumnSelection(columnIndex, select) {
-    rows.forEach((row) => {
+    rows.forEach((row, rowIndex) => {
+      if (rowIndex === 0) return;
       const cell = row.cells[columnIndex];
       if (cell) {
         if (select) {
@@ -126,13 +127,70 @@ document.addEventListener("DOMContentLoaded", function () {
    * @param {string} operation - İşlem türü (örneğin, "arithmetic").
    */
   function calculate(operation) {
-    const selectedValues = selectedCells.map((cell) => cell.textContent.trim());
-
-    if (selectedValues.length === 0) {
+    if (selectedCells.length === 0) {
       alert("Lütfen önce hücreleri seçin.");
       return;
     }
 
+    if (operation === "regression") {
+      // Sütunlara göre gruplandır
+      const columnGroups = selectedCells.reduce((acc, cell) => {
+        const columnIndex = cell.cellIndex; // Hücrenin sütun indeksini al
+        if (!acc[columnIndex]) acc[columnIndex] = [];
+        acc[columnIndex].push(cell.textContent.trim()); // Hücrenin değerini ekle
+        return acc;
+      }, {});
+
+      console.log("Sütun grupları (columnGroups):", columnGroups);
+
+      const columns = Object.keys(columnGroups);
+      if (columns.length < 2) {
+        alert("Regresyon testi için en az iki sütun seçmelisiniz.");
+        return;
+      }
+
+      // Sütun gruplarını iki boyutlu bir diziye dönüştür
+      const regressionValues = [];
+      const rowCount = columnGroups[columns[0]].length;
+
+      for (let i = 0; i < rowCount; i++) {
+        const row = columns.map((col) => parseFloat(columnGroups[col][i]));
+        regressionValues.push(row);
+      }
+
+      console.log("Backend'e gönderilecek regressionValues:", regressionValues);
+
+      // Backend'e gönder
+      fetch("/mathematical_operations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          selectedValues: regressionValues, // İki boyutlu dizi gönderiyoruz
+          operation: operation,
+        }),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Sunucudan hata geldi: " + response.statusText);
+          }
+          return response.json();
+        })
+        .then((data) => {
+          if (data.redirect_url) {
+            window.location.href = data.redirect_url;
+          }
+        })
+        .catch((error) => {
+          console.error("Veri gönderilirken hata oluştu:", error);
+        });
+
+      return;
+    }
+
+    // Diğer işlemler için
+    const selectedValues = selectedCells.map((cell) => cell.textContent.trim());
     fetch("/mathematical_operations", {
       method: "POST",
       headers: {
@@ -166,9 +224,11 @@ document.addEventListener("DOMContentLoaded", function () {
     { id: "calculate-median", operation: "median" },
     { id: "calculate-correlation", operation: "correlation" },
     { id: "calculate-std-dev", operation: "std_dev" },
+    { id: "calculate-variance", operation: "variance" },
     { id: "calculate-z-test", operation: "z_test" },
     { id: "calculate-t-test", operation: "t_test" },
-    
+    { id: "calculate-regression", operation: "regression" },
+    { id: "calculate-frequency", operation: "frequency" },
   ];
 
   operationButtons.forEach(({ id, operation }) => {

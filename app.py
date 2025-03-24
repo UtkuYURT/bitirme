@@ -9,7 +9,7 @@ import json
 from io import BytesIO
 import matplotlib.pyplot as plt
 from scipy import stats
-
+from sklearn.linear_model import LinearRegression
 
 app = Flask(__name__)
 CORS(app)
@@ -68,17 +68,47 @@ def generate_table_html(df, editable=False):
     return table_html
 
 def create_dynamic_plot(values, operation, result):
-    result = round(result, 2)
     plt.figure(figsize=(6, 4))
-    plt.plot(values, label='Veri Seti', marker='o', color='blue')
-    plt.axhline(result, color='red', linestyle='--', label=f'{OPERATIONS.get(operation, {}).get("title", "Matematiksel İşlem")}: {result}')
-    plt.title(f'{OPERATIONS.get(operation, {}).get("title", "Matematiksel İşlem")} Grafiği')
-    plt.xlabel('Veri Sırası')
-    plt.ylabel('Değer')
-    plt.legend()
+
+    if operation == 'frequency':
+        keys = list(result.keys())
+        values = list(result.values())
+        plt.bar(keys, values, color='blue', alpha=0.7)
+        plt.title('Frekans Grafiği')
+        plt.xlabel('Değerler')
+        plt.ylabel('Frekans')
+    elif operation == 'regression':
+        # Regresyon grafiği
+        X = values[:, 0]  # Bağımsız değişken
+        Y = values[:, 1]  # Bağımlı değişken
+
+        # Dağılım grafiği
+        plt.scatter(X, Y, color='blue', label='Veri Noktaları')
+
+        # Regresyon doğrusunu çiz
+        slope = result.get('slope', 0)
+        intercept = result.get('intercept', 0)
+        regression_line = slope * X + intercept
+        plt.plot(X, regression_line, color='red', label=f'Regresyon Doğrusu: y = {slope}x + {intercept}')
+
+        # Grafik başlıkları ve etiketler
+        plt.title('Regresyon Analizi')
+        plt.xlabel('Bağımsız Değişken (X)')
+        plt.ylabel('Bağımlı Değişken (Y)')
+        plt.legend()
+    else:
+        result = round(result, 2)
+        plt.plot(values, label='Veri Seti', marker='o', color='blue')
+        plt.axhline(result, color='red', linestyle='--', label=f'{OPERATIONS.get(operation, {}).get("title", "Matematiksel İşlem")}: {result}')
+        plt.title(f'{OPERATIONS.get(operation, {}).get("title", "Matematiksel İşlem")} Grafiği')
+        plt.xlabel('Veri Sırası')
+        plt.ylabel('Değer')
+        plt.legend()
+
     img = BytesIO()
     plt.savefig(img, format='png')
     img.seek(0)
+    plt.close()
     return img
 
 # ! Routes
@@ -249,6 +279,10 @@ OPERATIONS = {
         'function': lambda values: np.std(values),
         'title': 'Standart Sapma'
     },
+    'variance': { 
+        'function': lambda values: np.var(values),
+        'title': 'Varyans'
+    },
     'z_test': {
         'function': lambda values: (np.mean(values) - 0) / (np.std(values) / np.sqrt(len(values))),
         'title': 'Z Testi'
@@ -257,8 +291,14 @@ OPERATIONS = {
         'function': lambda values: (np.mean(values) - 0) / (np.std(values, ddof=1) / np.sqrt(len(values))),
         'title': 'T Testi'
     },
-    
-
+    'regression': {
+        'function': lambda values: LinearRegression().fit(values[:, 0].reshape(-1, 1), values[:, 1]),
+        'title': 'Regresyon Testi'
+    },
+    'frequency': {
+        'function': lambda values: {value: np.sum(values == value) for value in np.unique(values)},
+        'title': 'Frekans'
+    },
 }
     
 @app.route('/mathematical_operations', methods=['GET', 'POST'])
@@ -269,11 +309,26 @@ def mathematical_operations():
         operation = data.get('operation', 'arithmetic')
 
         try:
-            numeric_values = np.array([float(value) for value in selected_values if value.replace('.', '', 1).isdigit()])
+            if operation == 'regression':
+                numeric_values = np.array(selected_values, dtype=float)
+                if numeric_values.shape[1] < 2:
+                    raise ValueError("Regresyon testi için en az iki sütunlu veri gereklidir.")
+            else:
+                numeric_values = np.array([float(value) for value in selected_values if value.replace('.', '', 1).isdigit()])
+
             if numeric_values.size > 0:
                 operation_data = OPERATIONS.get(operation, {})
                 result = operation_data.get('function', lambda values: None)(numeric_values)
                 title = operation_data.get('title', 'Matematiksel İşlem')
+                if operation == 'frequency':
+                    result = {str(k): int(v) for k, v in result.items()}
+                elif operation == 'regression':
+                    result = {
+                        'slope': round(result.coef_[0], 2),
+                        'intercept': round(result.intercept_, 2),
+                    }
+                else:    
+                    result = round(result, 2)
             else:
                 result = None
                 title = 'Matematiksel İşlem'
@@ -305,8 +360,11 @@ def plot():
     if not selected_values or result is None:
         return "Grafik oluşturulacak veri bulunamadı.", 400
 
-    # Sayısal değerlere dönüştür
-    numeric_values = [float(value) for value in selected_values if value.replace('.', '', 1).isdigit()]
+    # Regresyon testi için sayısal değerlere dönüştür
+    if operation == 'regression':
+        numeric_values = np.array(selected_values, dtype=float)
+    else:
+        numeric_values = np.array([float(value) for value in selected_values if value.replace('.', '', 1).isdigit()])
 
     img = create_dynamic_plot(numeric_values, operation, result)
     return send_file(img, mimetype='image/png')

@@ -30,12 +30,30 @@ show_right_sidebar = false %} {% block title %}Matematiksel İşlemler{% endbloc
       {% endif %}
     </div>
     <div class="card-body">
-      {% if result is not none %}
-      <h5>Sonuç: {{ result | round(2) }}</h5>
+      {% if result is not none %} {% if operation == 'frequency' %}
+      <ul>
+        {% for key, value in result.items() %}
+        <li>{{ key }} ==> {{ value }}</li>
+        {% endfor %}
+      </ul>
+      <div class="text-center mt-3">
+        <img src="{{ url_for('plot') }}" alt="Grafik" class="img-fluid" />
+      </div>
+      {% elif operation == 'regression' %}
+      <h5>Regresyon Sonuçları:</h5>
+      <ul>
+        <li>Eğim (Slope): {{ result.slope }}</li>
+        <li>Kesişim (Intercept): {{ result.intercept }}</li>
+      </ul>
       <div class="text-center mt-3">
         <img src="{{ url_for('plot') }}" alt="Grafik" class="img-fluid" />
       </div>
       {% else %}
+      <h5>Sonuç: {{ result | round(2) }}</h5>
+      <div class="text-center mt-3">
+        <img src="{{ url_for('plot') }}" alt="Grafik" class="img-fluid" />
+      </div>
+      {% endif %} {% else %}
       <h5>Henüz bir işlem yapılmadı.</h5>
       {% endif %}
       <div class="text-center mt-2">
