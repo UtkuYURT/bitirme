@@ -136,8 +136,10 @@ document.addEventListener("DOMContentLoaded", function () {
       // Sütunlara göre gruplandır
       const columnGroups = selectedCells.reduce((acc, cell) => {
         const columnIndex = cell.cellIndex; // Hücrenin sütun indeksini al
+
+        // Sütun gruplarını oluştur
         if (!acc[columnIndex]) acc[columnIndex] = [];
-        acc[columnIndex].push(cell.textContent.trim()); // Hücrenin değerini ekle
+        acc[columnIndex].push(parseFloat(cell.textContent.trim())); // Hücre değerini ekle
         return acc;
       }, {});
 
@@ -149,14 +151,8 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      // Sütun gruplarını iki boyutlu bir diziye dönüştür
-      const regressionValues = [];
-      const rowCount = columnGroups[columns[0]].length;
-
-      for (let i = 0; i < rowCount; i++) {
-        const row = columns.map((col) => parseFloat(columnGroups[col][i]));
-        regressionValues.push(row);
-      }
+      // Sütun gruplarını iki boyutlu bir diziye dönüştür (sütun bazlı)
+      const regressionValues = columns.map((col) => columnGroups[col]);
 
       console.log("Backend'e gönderilecek regressionValues:", regressionValues);
 
@@ -167,7 +163,7 @@ document.addEventListener("DOMContentLoaded", function () {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          selectedValues: regressionValues, // İki boyutlu dizi gönderiyoruz
+          selectedValues: regressionValues, // Sütun bazlı dizi gönderiyoruz
           operation: operation,
         }),
       })
