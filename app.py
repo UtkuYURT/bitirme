@@ -8,6 +8,7 @@ import os
 import json
 from io import BytesIO
 import matplotlib.pyplot as plt
+from scipy import stats
 
 
 app = Flask(__name__)
@@ -239,7 +240,25 @@ OPERATIONS = {
     'median': {
         'function': lambda values: np.median(values),
         'title': 'Medyan'   
-    }
+    },
+    'correlation': {
+        'function': lambda values: np.corrcoef(values),
+        'title': 'Korelasyon Analizi'
+    },
+    'std_dev': { 
+        'function': lambda values: np.std(values),
+        'title': 'Standart Sapma'
+    },
+    'z_test': {
+        'function': lambda values: (np.mean(values) - 0) / (np.std(values) / np.sqrt(len(values))),
+        'title': 'Z Testi'
+    },
+    't_test': {
+        'function': lambda values: (np.mean(values) - 0) / (np.std(values, ddof=1) / np.sqrt(len(values))),
+        'title': 'T Testi'
+    },
+    
+
 }
     
 @app.route('/mathematical_operations', methods=['GET', 'POST'])
@@ -334,7 +353,7 @@ def ollama_interact():
     response = requests.post(
         'http://127.0.0.1:11434/api/generate',  # Ollama sunucu adresi
         json={
-            "model": "mistral",  # Buraya kullanmak istediğin modeli yaz
+            "model": "llama3.2",  # Buraya kullanmak istediğin modeli yaz
             "prompt": user_input
         },
         stream=True  # Streaming yanıtları işlemek için

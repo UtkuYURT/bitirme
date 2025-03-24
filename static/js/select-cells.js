@@ -164,6 +164,11 @@ document.addEventListener("DOMContentLoaded", function () {
     { id: "calculate-geometric", operation: "geometric" },
     { id: "calculate-harmonic", operation: "harmonic" },
     { id: "calculate-median", operation: "median" },
+    { id: "calculate-correlation", operation: "correlation" },
+    { id: "calculate-std-dev", operation: "std_dev" },
+    { id: "calculate-z-test", operation: "z_test" },
+    { id: "calculate-t-test", operation: "t_test" },
+    
   ];
 
   operationButtons.forEach(({ id, operation }) => {
