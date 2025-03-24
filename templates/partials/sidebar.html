@@ -31,6 +31,8 @@
     </li>
 
     <li>
+      <!-- mathematical_operations sayfasında Analiz modülünü devre dışı bırak -->
+      {% if request.endpoint != 'mathematical_operations' %}
       <button
         class="btn btn-toggle rounded collapsed text-white toggle-button"
         data-bs-toggle="collapse"
@@ -112,6 +114,7 @@
           </li>
         </ul>
       </div>
+      {% endif %}
     </li>
 
     <li>
