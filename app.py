@@ -78,7 +78,6 @@ def create_dynamic_plot(values, operation, result):
         plt.xlabel('Değerler')
         plt.ylabel('Frekans')
     elif operation == 'regression':
-        # Regresyon grafiği
         X = values[:, 0]  # Bağımsız değişken
         Y = values[:, 1]  # Bağımlı değişken
 
@@ -88,7 +87,7 @@ def create_dynamic_plot(values, operation, result):
         # Regresyon doğrusunu çiz
         slope = result.get('slope', 0)
         intercept = result.get('intercept', 0)
-        regression_line = slope * X + intercept
+        regression_line = [slope * x + intercept for x in X]
         plt.plot(X, regression_line, color='red', label=f'Regresyon Doğrusu: y = {slope}x + {intercept}')
 
         # Grafik başlıkları ve etiketler
@@ -305,33 +304,47 @@ OPERATIONS = {
 def mathematical_operations():
     if request.method == 'POST':
         data = request.get_json()
-        selected_values = request.get_json().get('selectedValues', [])
+        selected_values = data.get('selectedValues', [])
         operation = data.get('operation', 'arithmetic')
 
         try:
             if operation == 'regression':
-                numeric_values = np.array(selected_values, dtype=float)
-                if numeric_values.shape[1] < 2:
-                    raise ValueError("Regresyon testi için en az iki sütunlu veri gereklidir.")
+                # Veriyi numpy array'e dönüştür
+                numeric_values = np.array(selected_values, dtype=float).T  # Transpose alarak sütunları ayır
+
+                # Bağımsız değişken (X) ve bağımlı değişken (Y) olarak ayır
+                X = numeric_values[:, 0].reshape(-1, 1)  # Sütun 1 (bağımsız değişken)
+                Y = numeric_values[:, 1]  # Sütun 2 (bağımlı değişken)
+
+                # Regresyon analizi
+                model = LinearRegression().fit(X, Y)
+                slope = model.coef_[0]  # Eğim
+                intercept = model.intercept_  # Kesişim noktası
+
+                # Sonucu döndür
+                result = {
+                    'slope': round(slope, 2),
+                    'intercept': round(intercept, 2),
+                }
+                title = 'Regresyon Testi'
+
             else:
+                # Diğer işlemler için veriyi işleme
                 numeric_values = np.array([float(value) for value in selected_values if value.replace('.', '', 1).isdigit()])
 
-            if numeric_values.size > 0:
-                operation_data = OPERATIONS.get(operation, {})
-                result = operation_data.get('function', lambda values: None)(numeric_values)
-                title = operation_data.get('title', 'Matematiksel İşlem')
-                if operation == 'frequency':
-                    result = {str(k): int(v) for k, v in result.items()}
-                elif operation == 'regression':
-                    result = {
-                        'slope': round(result.coef_[0], 2),
-                        'intercept': round(result.intercept_, 2),
-                    }
-                else:    
-                    result = round(result, 2)
-            else:
-                result = None
-                title = 'Matematiksel İşlem'
+                if numeric_values.size > 0:
+                    operation_data = OPERATIONS.get(operation, {})
+                    result = operation_data.get('function', lambda values: None)(numeric_values)
+                    title = operation_data.get('title', 'Matematiksel İşlem')
+
+                    if operation == 'frequency':
+                        result = {str(k): int(v) for k, v in result.items()}
+                    else:
+                        result = round(result, 2)
+                else:
+                    result = None
+                    title = 'Matematiksel İşlem'
+
         except Exception as e:
             return jsonify({"error": str(e)}), 400
 
@@ -345,6 +358,7 @@ def mathematical_operations():
         return jsonify({"redirect_url": url_for('mathematical_operations')})
 
     else:
+        # GET isteği için mevcut verileri döndür
         result = session.get('result', None)
         selected_values = session.get('selected_values', [])
         operation = session.get('operation', 'arithmetic')
@@ -361,10 +375,7 @@ def plot():
         return "Grafik oluşturulacak veri bulunamadı.", 400
 
     # Regresyon testi için sayısal değerlere dönüştür
-    if operation == 'regression':
-        numeric_values = np.array(selected_values, dtype=float)
-    else:
-        numeric_values = np.array([float(value) for value in selected_values if value.replace('.', '', 1).isdigit()])
+    numeric_values = np.array(selected_values, dtype=float)
 
     img = create_dynamic_plot(numeric_values, operation, result)
     return send_file(img, mimetype='image/png')
