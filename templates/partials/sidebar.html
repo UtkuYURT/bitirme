@@ -31,7 +31,6 @@
     </li>
 
     <li>
-      <!-- mathematical_operations sayfasında Analiz modülünü devre dışı bırak -->
       {% if request.endpoint != 'mathematical_operations' %}
       <button
         class="btn btn-toggle rounded collapsed text-white toggle-button"
@@ -115,6 +114,32 @@
         </ul>
       </div>
       {% endif %}
+    </li>
+
+    <li>
+      <a href="{{ url_for('operation_logs') }}">
+        <button
+          class="btn btn-toggle rounded collapsed text-white toggle-button"
+          data-bs-toggle="collapse"
+          data-bs-target="#collapse2"
+          aria-expanded="false"
+        >
+          <span class="name">İşlem Geçmişi</span>
+        </button>
+      </a>
+    </li>
+
+    <li>
+      <a href="{{ url_for('ollama_chat') }}">
+        <button
+          class="btn btn-toggle rounded collapsed text-white toggle-button"
+          data-bs-toggle="collapse"
+          data-bs-target="#collapse2"
+          aria-expanded="false"
+        >
+          <span class="name">Llama</span>
+        </button>
+      </a>
     </li>
 
     <li>

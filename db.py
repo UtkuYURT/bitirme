@@ -124,6 +124,7 @@ def create_tables():
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_turkish_ci
         """)
 
+        # log_table tablosu
         cur.execute("""
         CREATE TABLE IF NOT EXISTS log_table (
             id INT AUTO_INCREMENT PRIMARY KEY,
@@ -137,8 +138,22 @@ def create_tables():
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id)
         )
-        """)        
+        """)
 
+        # operation_logs tablosu
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS operation_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                operation VARCHAR(50) NOT NULL,
+                input_values TEXT NOT NULL,
+                result TEXT NOT NULL,
+                graph_path VARCHAR(255) DEFAULT NULL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """)
+                 
         print("Tablolar başarıyla oluşturuldu veya zaten mevcut.")
         cur.close()
         conn.commit()
@@ -254,7 +269,6 @@ def update_table_data(user_id, file_name, updated_data):
         print(f"Güncelleme hatası: {str(e)}")
         return f"Güncelleme hatası: {str(e)}"    
            
-
 def rollback_change(user_id, file_name, log_id):
     try:
         # Log kaydını al
@@ -328,7 +342,33 @@ def rollback_change(user_id, file_name, log_id):
         print(f"Geri alma hatası: {str(e)}")
         return f"Geri alma hatası: {str(e)}"
 
+def log_operation(user_id, operation, input_values, result, graph_path=None):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            INSERT INTO operation_logs (user_id, operation, input_values, result, graph_path, timestamp)
+            VALUES (%s, %s, %s, %s, %s, NOW())
+        """, (user_id, operation, str(input_values), str(result), graph_path))
+        mysql.connection.commit()
+        cur.close()
+    except Exception as e:
+        print(f"İşlem loglama hatası: {str(e)}")
 
+def get_operations_logs(user_id):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            SELECT operation, input_values, result, timestamp, graph_path
+            FROM operation_logs
+            WHERE user_id = %s
+            ORDER BY timestamp DESC
+        """, (user_id,))
+        logs = cur.fetchall()
+        cur.close()
+        return logs
+    except Exception as e:
+        print(f"Operation logs alınırken hata oluştu: {str(e)}")
+        return []
 
 
 

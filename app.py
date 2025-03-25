@@ -113,6 +113,52 @@ def create_dynamic_plot(values, operation, result):
     plt.close()
     return img
 
+def save_graph(values, operation, result, user_id):
+    try:
+        # Grafik oluştur
+        plt.figure(figsize=(6, 4))
+
+        if operation == 'regression':
+            X = values[:, 0]
+            Y = values[:, 1]
+
+            # Dağılım grafiği
+            plt.scatter(X, Y, color='blue', label='Veri Noktaları')
+
+            # Regresyon doğrusunu çiz
+            slope = result.get('slope', 0)
+            intercept = result.get('intercept', 0)
+            regression_line = [slope * x + intercept for x in X]
+            plt.plot(X, regression_line, color='red', label=f'Regresyon Doğrusu: y = {slope}x + {intercept}')
+
+            # Grafik başlıkları ve etiketler
+            plt.title('Regresyon Analizi')
+            plt.xlabel('Bağımsız Değişken (X)')
+            plt.ylabel('Bağımlı Değişken (Y)')
+            plt.legend()
+
+        else:
+            # Aritmetik ortalama gibi işlemler için grafik
+            plt.plot(values, label='Veri Seti', marker='o', color='blue')
+            plt.axhline(result, color='red', linestyle='--', label=f'{OPERATIONS.get(operation, {}).get("title", "Sonuç")}: {result}')
+            plt.title(f'{OPERATIONS.get(operation, {}).get("title", "Matematiksel İşlem")} Grafiği')
+            plt.xlabel('Veri Sırası')
+            plt.ylabel('Değer')
+            plt.legend()
+
+        # Grafik dosyasını kaydet
+        graph_dir = os.path.join('static', 'graphs', str(user_id))
+        os.makedirs(graph_dir, exist_ok=True)
+        graph_path = os.path.join(graph_dir, f"{operation}_{datetime.now().strftime('%Y%m%d%H%M%S')}.png")
+        plt.savefig(graph_path)
+        plt.close()
+
+        print(f"Grafik kaydedildi: {graph_path}")  # Log ekleyin
+        return graph_path
+    except Exception as e:
+        print(f"Grafik kaydetme hatası: {str(e)}")
+        return None
+    
 # ! Routes
 @app.route('/')
 def home():
@@ -312,27 +358,24 @@ def mathematical_operations():
 
         try:
             if operation == 'regression':
-                # Veriyi numpy array'e dönüştür
-                numeric_values = np.array(selected_values, dtype=float).T  # Transpose alarak sütunları ayır
+                numeric_values = np.array(selected_values, dtype=float).T  
 
-                # Bağımsız değişken (X) ve bağımlı değişken (Y) olarak ayır
-                X = numeric_values[:, 0].reshape(-1, 1)  # Sütun 1 (bağımsız değişken)
-                Y = numeric_values[:, 1]  # Sütun 2 (bağımlı değişken)
+                # Bağımsız değişken (X) bağımlı değişken (Y)
+                X = numeric_values[:, 0].reshape(-1, 1) 
+                Y = numeric_values[:, 1]  
 
-                # Regresyon analizi
                 model = LinearRegression().fit(X, Y)
-                slope = model.coef_[0]  # Eğim
-                intercept = model.intercept_  # Kesişim noktası
+                slope = model.coef_[0] 
+                intercept = model.intercept_ 
 
-                # Sonucu döndür
                 result = {
                     'slope': round(slope, 2),
                     'intercept': round(intercept, 2),
                 }
                 title = 'Regresyon Testi'
 
+                graph_path = save_graph(numeric_values, operation, result, is_user_logged_in())
             else:
-                # Diğer işlemler için veriyi işleme
                 numeric_values = np.array([float(value) for value in selected_values if value.replace('.', '', 1).isdigit()])
 
                 if numeric_values.size > 0:
@@ -342,26 +385,29 @@ def mathematical_operations():
 
                     if operation == 'frequency':
                         result = {str(k): int(v) for k, v in result.items()}
+                        graph_path = save_graph(numeric_values, operation, result, is_user_logged_in())
                     else:
                         result = round(result, 2)
+                        graph_path = save_graph(numeric_values, operation, result, is_user_logged_in())
                 else:
                     result = None
                     title = 'Matematiksel İşlem'
+                    graph_path = None
+
+            user_id = is_user_logged_in() 
+            log_operation(user_id, operation, selected_values, result, graph_path)
 
         except Exception as e:
             return jsonify({"error": str(e)}), 400
 
-        # Sonucu ve seçilmiş sayıları session'a kaydet
         session['result'] = result
         session['selected_values'] = selected_values
         session['operation'] = operation
         session['operation_title'] = title
 
-        # Yönlendirme URL'sini döndür
         return jsonify({"redirect_url": url_for('mathematical_operations')})
 
     else:
-        # GET isteği için mevcut verileri döndür
         result = session.get('result', None)
         selected_values = session.get('selected_values', [])
         operation = session.get('operation', 'arithmetic')
@@ -409,11 +455,21 @@ def rollback():
         result = rollback_change(user_id, file_name, log_id)
         flash(result, "file_success" if "başarıyla" in result else "file_danger")
         return redirect(url_for('rollback', file_name=file_name))
-    
+
+@app.route('/operation_logs')
+def operation_logs():
+    user_id = session.get('user_id')
+    if not user_id:
+        flash("Kullanıcı giriş yapmamış", "file_danger")
+        return redirect(url_for('home'))
+
+    logs = get_operations_logs(user_id)
+    return render_template('operation_logs.html', logs=logs)
+
 # !! OLLAMA 
 @app.route('/ollama_chat')
 def ollama_chat():
-    return render_template('ollama_chat.html')  # ollama_chat.html dosyasını render et
+    return render_template('ollama_chat.html') 
       
 # Ollama API 'YE İstek Gönderme
 @app.route('/ollama', methods=['POST'])

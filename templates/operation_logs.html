@@ -1,6 +1,6 @@
 {% extends "partials/base.html" %} {% set show_sidebar = true %} {% set
-show_right_sidebar = true %} {% block title %} Ana Sayfa {% endblock %} {% block
-content %}
+show_right_sidebar = false %} {% block title %} İşlem Geçmişi {% endblock %} {%
+block content %}
 
 <!-- sayfa başlangıcı -->
 
@@ -22,18 +22,39 @@ content %}
 <div id="file_div" data-file-name="{{ file_name }}">
   <div class="card file-upload-card">
     <div class="card-title">
-      <h3 class="text-center fw-bold">Dosya Görüntüleme</h3>
-      {% if file_name %}
-      <p class="text-center text-secondary">
-        Dosya: <strong>{{ file_name }}</strong>
-      </p>
-      {% endif %}
+      <h3 class="text-center fw-bold">Log Kayıtları</h3>
     </div>
     <div class="card-body">
-      {% if content %}
+      {% if logs %}
       <div class="table-responsive">
-        <!-- HTML Tablosu render ediliyor -->
-        {{ content|safe }}
+        <table class="table table-bordered table-hover">
+          <thead>
+            <tr>
+              <th>İşlem Türü</th>
+              <th>Girdi Değerleri</th>
+              <th>Sonuç</th>
+              <th>Grafik</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in logs %}
+            <tr>
+              <td>{{ log[0] }}</td>
+              <td>{{ log[1] }}</td>
+              <td>{{ log[2] }}</td>
+              <td>
+                {% if log[4] %}
+                <img
+                  src="{{ url_for('static', filename=log[4].replace('\\', '/').replace('static/', '')) }}"
+                  alt="Grafik"
+                  style="max-width: 200px"
+                />
+                {% else %} Yok {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
       {% else %}
       <p class="text-center text-danger">Dosya içeriği bulunamadı.</p>
@@ -42,11 +63,6 @@ content %}
         <button class="btn btn-file" type="submit">
           <a href="{{ url_for('file_operations') }}"
             >Dosya İşlemlerine Geri Dön</a
-          >
-        </button>
-        <button class="btn btn-file" type="submit">
-          <a href="{{ url_for('rollback', file_name=file_name) }}"
-            >Geçmiş Değişiklikler</a
           >
         </button>
       </div>
