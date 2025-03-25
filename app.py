@@ -7,9 +7,12 @@ import requests
 import os
 import json
 from io import BytesIO
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy import stats
 from sklearn.linear_model import LinearRegression
+
 
 app = Flask(__name__)
 CORS(app)
