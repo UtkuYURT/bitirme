@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from sklearn.linear_model import LinearRegression
 
-
 app = Flask(__name__)
 CORS(app)
 
@@ -466,7 +465,6 @@ def operation_logs():
     logs = get_operations_logs(user_id)
     return render_template('operation_logs.html', logs=logs)
 
-# !! OLLAMA 
 @app.route('/ollama_chat')
 def ollama_chat():
     return render_template('ollama_chat.html') 
@@ -474,17 +472,15 @@ def ollama_chat():
 # Ollama API 'YE İstek Gönderme
 @app.route('/ollama', methods=['POST'])
 def ollama_interact():
-    # Kullanıcıdan gelen metni al
     user_input = request.json.get('input', '')
 
-    # Ollama API'sine istek gönder
     response = requests.post(
-        'http://127.0.0.1:11434/api/generate',  # Ollama sunucu adresi
+        'http://127.0.0.1:11434/api/generate', 
         json={
-            "model": "llama3.2",  # Buraya kullanmak istediğin modeli yaz
+            "model": "llama3.2", 
             "prompt": user_input
         },
-        stream=True  # Streaming yanıtları işlemek için
+        stream=True 
     )
 
     # Yanıtı parça parça işlemek için birikmiş metni tutacak bir değişken
@@ -509,7 +505,6 @@ def ollama_interact():
             return jsonify({"error": f"Streaming işleme hatası: {str(e)}"}), 500
     else:
         return jsonify({"error": "Ollama yanıt vermedi", "status_code": response.status_code}), 500
-# !! OLLLAMA 
 
 if __name__ == '__main__':
     app.run(debug=True)

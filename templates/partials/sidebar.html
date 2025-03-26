@@ -31,7 +31,7 @@
     </li>
 
     <li>
-      {% if request.endpoint != 'mathematical_operations' %}
+      {% if request.endpoint != 'mathematical_operations' and request.endpoint != 'file_operations' %}
       <button
         class="btn btn-toggle rounded collapsed text-white toggle-button"
         data-bs-toggle="collapse"

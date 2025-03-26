@@ -244,3 +244,62 @@ button.btn-remove:hover {
 .analysis-cell.selected {
   border: 3px solid var(--color-dark-blue);
 }
+
+/* ? ollama-chat.css  */
+#prompt {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  resize: none;
+  margin-bottom: 20px;
+}
+
+.prompt-button-div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+#prompt-button {
+  padding: 10px 20px;
+  background-color: var(--color-dark-blue);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: transform 0.2s ease-in;
+}
+
+#prompt-button:hover {
+  background-color: var(--color-shadow);
+  transform: translateY(-3px);
+}
+
+#response {
+  margin-top: 20px;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  word-wrap: break-word;
+}
+
+.loader {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

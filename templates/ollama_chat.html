@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
@@ -22,4 +22,51 @@
     </div>
     <script src="/static/js/ollama-chat.js"></script>
 </body>
-</html>
+</html> -->
+
+{% extends "partials/base.html" %} {% set show_sidebar = true %} {% set
+show_right_sidebar = false %} {% block title %}Llama{% endblock %} {% block
+content %}
+
+<!-- sayfa başlangıcı -->
+
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%}
+<div id="file_div">
+  {% for category, message in messages %} {% if category == 'file_success' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ message }}
+  </div>
+  {% elif category == 'file_danger' %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ message }}
+  </div>
+  {% endif %} {% endfor %}
+</div>
+{% endif %} {% endwith %}
+
+<div id="file_div" data-file-name="{{ file_name }}">
+  <div class="card file-upload-card">
+    <div class="card-title">
+      <h3 class="text-center fw-bold">Llama ile Sohbet</h3>
+    </div>
+    <div class="card-body">
+      <textarea
+        id="prompt"
+        rows="3"
+        placeholder="Bir şeyler yazın..."
+      ></textarea>
+      <div class="prompt-button-div">
+        <button onclick="sendRequest()" id="prompt-button">Gönder</button>
+      </div>
+      <div id="response"></div>
+      <div id="spinner" style="display: none; margin-top: 20px">
+        <div class="loader"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/ollama-chat.js') }}"></script>
+
+  {% endblock %}
+</div>
