@@ -370,6 +370,16 @@ def get_operations_logs(user_id):
         print(f"Operation logs alınırken hata oluştu: {str(e)}")
         return []
 
+def delete_operation_logs_db(user_id, operation, input_values, result, graph):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("DELETE FROM operation_logs WHERE user_id = %s AND operation = %s AND input_values = %s AND result = %s AND graph_path = %s", (user_id, operation, input_values, result, graph))
+        mysql.connection.commit()
+        cur.close()
+        return True
+    except Exception as e:
+        print(f"Operation log silinirken hata oluştu: {str(e)}")
+        return False
 
 
 

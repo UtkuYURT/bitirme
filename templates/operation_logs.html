@@ -27,18 +27,24 @@ block content %}
     <div class="card-body">
       {% if logs %}
       <div class="table-responsive">
-        <table class="table table-bordered table-hover">
+        <table class="table table-bordered table-hover table-operation-logs">
           <thead>
             <tr>
               <th>İşlem Türü</th>
               <th>Girdi Değerleri</th>
               <th>Sonuç</th>
               <th>Grafik</th>
+              <th></th>
             </tr>
           </thead>
           <tbody>
             {% for log in logs %}
-            <tr>
+            <tr
+              data-operation="{{ log[0] }}"
+              data-input-values="{{ log[1] }}"
+              data-result="{{ log[2] }}"
+              data-graph="{{ log[4] }}"
+            >
               <td>{{ log[0] }}</td>
               <td>{{ log[1] }}</td>
               <td>{{ log[2] }}</td>
@@ -47,9 +53,14 @@ block content %}
                 <img
                   src="{{ url_for('static', filename=log[4].replace('\\', '/').replace('static/', '')) }}"
                   alt="Grafik"
-                  style="max-width: 200px"
+                  class="img-fluid"
                 />
                 {% else %} Yok {% endif %}
+              </td>
+              <td>
+                <button type="submit" class="btn btn-danger delete-log-btn">
+                  Sil
+                </button>
               </td>
             </tr>
             {% endfor %}
@@ -60,6 +71,13 @@ block content %}
       <p class="text-center text-danger">Dosya içeriği bulunamadı.</p>
       {% endif %}
       <div class="text-center mt-2">
+        <button
+          class="btn btn-file"
+          type="submit"
+          onclick="sendSelectedRowsToOllama()"
+        >
+          Ollama ile Sohbet
+        </button>
         <button class="btn btn-file" type="submit">
           <a href="{{ url_for('file_operations') }}"
             >Dosya İşlemlerine Geri Dön</a
@@ -69,7 +87,7 @@ block content %}
     </div>
   </div>
 
-  <script src="{{ url_for('static', filename='js/edit-table.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/log-select-cells.js') }}"></script>
 
   {% endblock %}
 </div>

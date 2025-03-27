@@ -458,16 +458,77 @@ def rollback():
 @app.route('/operation_logs')
 def operation_logs():
     user_id = session.get('user_id')
+
     if not user_id:
         flash("Kullanıcı giriş yapmamış", "file_danger")
         return redirect(url_for('home'))
+    
+    if 'selected_rows' in session:
+        session.pop('selected_rows', None)
+
+    # prompt session'ı varsa sıfırla
+    if 'prompt' in session:
+        session.pop('prompt', None)
 
     logs = get_operations_logs(user_id)
     return render_template('operation_logs.html', logs=logs)
 
-@app.route('/ollama_chat')
+@app.route('/delete_operation_log', methods=['POST'])
+def delete_operation_log():
+    user_id = is_user_logged_in(),
+    if not user_id:
+            return jsonify({"success": False, "error": "Kullanıcı giriş yapmamış."}), 403
+    
+    data = request.json
+    operation = data.get('operation')
+    input_values = data.get('input_values')
+    result = data.get('result')
+    graph = data.get('graph')
+    
+    success = delete_operation_logs_db(user_id, operation, input_values, result, graph)
+
+    if graph:
+            graph_path = os.path.join(os.getcwd(), graph.lstrip('/'))
+            if os.path.exists(graph_path):
+                os.remove(graph_path)
+                print(f"Grafik dosyası silindi: {graph_path}")
+            else:
+                print(f"Grafik dosyası bulunamadı: {graph_path}")
+
+    if success:
+        return jsonify({"success": True, "message": "Log başarıyla silindi."})
+    else:
+        return jsonify({"success": False, "error": "Log silinirken bir hata oluştu."}), 500
+
+@app.route('/ollama_chat', methods=['GET', 'POST'])
 def ollama_chat():
     return render_template('ollama_chat.html') 
+
+@app.route('/ollama_operation_chat', methods=['GET', 'POST'])
+def ollama_operation_chat():
+    if request.method == 'POST':
+        selected_rows = request.json.get('selectedRows', [])
+
+        if len(selected_rows) < 2:
+            return jsonify({"success": False, "error": "Lütfen en az iki satır seçin!"}), 400
+        
+        session['selected_rows'] = selected_rows  
+
+        prompt = []
+        for row in selected_rows:
+            operation_type = row.get('operationType') # işlem türü
+            input_values = row.get('inputValues') # işlemlerin girdi değerleri
+            result = row.get('result') # işlem sonucu
+            # prompt oluştur
+            prompt.append(f"{input_values} değerleri ile {operation_type} işlemi yaptım ve {result} sonucunu aldım.")
+        prompt.append(f"Bu {len(selected_rows)} işlemi karşılaştırır mısın?")
+        session['prompt'] = " ".join(prompt)
+
+        return jsonify({"success": True, "message": "İşlem başarıyla tamamlandı."})
+
+    selected_rows = session.get('selected_rows', [])
+    prompt = session.get('prompt', "")
+    return render_template('ollama_operation_chat.html', selected_rows=selected_rows, prompt=prompt)
       
 # Ollama API 'YE İstek Gönderme
 @app.route('/ollama', methods=['POST'])

@@ -241,7 +241,8 @@ button.btn-remove:hover {
   }
 }
 
-.analysis-cell.selected {
+.analysis-cell.selected,
+.table-operation-logs tbody tr.selected {
   border: 3px solid var(--color-dark-blue);
 }
 
@@ -283,6 +284,10 @@ button.btn-remove:hover {
   border-radius: 8px;
   background-color: #f9f9f9;
   word-wrap: break-word;
+}
+
+#spinner {
+  display: none;
 }
 
 .loader {
