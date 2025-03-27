@@ -11,7 +11,7 @@ function sendRequest() {
   document.getElementById("spinner").style.display = "block";
   document.getElementById("response").innerHTML = "";
 
-  fetch("http://localhost:5000/ollama", {
+  fetch("/ollama", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

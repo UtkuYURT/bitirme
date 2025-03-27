@@ -475,7 +475,7 @@ def operation_logs():
 
 @app.route('/delete_operation_log', methods=['POST'])
 def delete_operation_log():
-    user_id = is_user_logged_in(),
+    user_id = is_user_logged_in()
     if not user_id:
             return jsonify({"success": False, "error": "Kullanıcı giriş yapmamış."}), 403
     
@@ -529,10 +529,14 @@ def ollama_operation_chat():
     selected_rows = session.get('selected_rows', [])
     prompt = session.get('prompt', "")
     return render_template('ollama_operation_chat.html', selected_rows=selected_rows, prompt=prompt)
-      
+
 # Ollama API 'YE İstek Gönderme
 @app.route('/ollama', methods=['POST'])
 def ollama_interact():
+    print(f"[DEBUG] session içeriği: {dict(session)}")
+    user_id = is_user_logged_in()
+    print(user_id)
+
     user_input = request.json.get('input', '')
 
     response = requests.post(
@@ -559,6 +563,8 @@ def ollama_interact():
                         full_response += json_line.get("response", "")
                     except json.JSONDecodeError as e:
                         print(f"JSON ayrıştırma hatası: {str(e)}")
+            
+            log_llama_chat(user_id, user_input, full_response)
             
             # Tam yanıtı döndür
             return jsonify({"success": True, "response": full_response})

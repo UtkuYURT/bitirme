@@ -153,6 +153,18 @@ def create_tables():
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
         """)
+
+        # llama_logs
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS llama_logs (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NOT NULL,
+                question TEXT NOT NULL, 
+                answer TEXT NOT NULL,
+                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        """)
                  
         print("Tablolar başarıyla oluşturuldu veya zaten mevcut.")
         cur.close()
@@ -381,6 +393,17 @@ def delete_operation_logs_db(user_id, operation, input_values, result, graph):
         print(f"Operation log silinirken hata oluştu: {str(e)}")
         return False
 
+def log_llama_chat(user_id, question, answer):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            INSERT INTO llama_logs (user_id, question, answer)
+            VALUES (%s, %s, %s)
+        """, (user_id, question, answer))
+        mysql.connection.commit()
+        cur.close()
+    except Exception as e:
+        print(f"Llama sohbeti loglanırken hata oluştu: {str(e)}")
 
 
 
