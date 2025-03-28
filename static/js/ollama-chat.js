@@ -1,11 +1,17 @@
 function sendRequest() {
   const prompt = document.getElementById("prompt").value;
-  if (prompt.trim() === "") {
-    alert("Lütfen bir prompt girin.");
+  const imageInput = document.getElementById("image-upload");
+  const formData = new FormData();
+
+  if (prompt.trim() === "" && !imageInput.files.length) {
+    alert("Lütfen bir prompt girin veya bir resim yükleyin.");
     return;
   }
 
-  const data = { input: prompt };
+  formData.append("input", prompt);
+  if (imageInput.files.length) {
+    formData.append("image", imageInput.files[0]);
+  }
 
   // Spinner'ı göster
   document.getElementById("spinner").style.display = "block";
@@ -13,10 +19,7 @@ function sendRequest() {
 
   fetch("/ollama", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
+    body: formData,
   })
     .then((response) => response.json())
     .then((data) => {

@@ -12,6 +12,9 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from scipy import stats
 from sklearn.linear_model import LinearRegression
+import base64
+from PIL import Image
+import io
 
 app = Flask(__name__)
 CORS(app)
@@ -535,25 +538,50 @@ def ollama_operation_chat():
 def ollama_interact():
     print(f"[DEBUG] session içeriği: {dict(session)}")
     user_id = is_user_logged_in()
-    print(user_id)
+    print(f"[DEBUG] Kullanıcı ID: {user_id}")
 
-    user_input = request.json.get('input', '')
+    user_input = request.form.get('input', '')
+    image_file = request.files.get('image')
 
-    response = requests.post(
-        'http://127.0.0.1:11434/api/generate', 
-        json={
-            "model": "llama3.2", 
-            "prompt": user_input
-        },
-        stream=True 
-    )
+    # Ollama API'ye gönderilecek veriler
+    payload = {"model": "llava:latest", "prompt": user_input}
 
-    # Yanıtı parça parça işlemek için birikmiş metni tutacak bir değişken
-    full_response = ""
-
-    # Streaming yanıtları işleme
-    if response.status_code == 200:
+    # Eğer bir resim yüklendiyse, base64 formatına dönüştür
+    if image_file:
         try:
+            # Resmi PIL ile aç
+            image = Image.open(image_file)
+            
+            # Resmi optimize etmek için yeniden boyutlandırma (isteğe bağlı)
+            image = image.convert("RGB")  # Renk modunu RGB'ye çevir
+            buffer = io.BytesIO()
+            image.save(buffer, format="JPEG")  # Resmi JPEG formatında kaydet
+            buffer.seek(0)
+
+            # Base64 formatına dönüştür
+            base64_image = base64.b64encode(buffer.read()).decode('utf-8')
+            payload["images"] = [base64_image]
+            print(f"[DEBUG] Resim base64 formatına dönüştürüldü.")
+        except Exception as e:
+            print(f"[DEBUG] Resim işleme hatası: {str(e)}")
+            return jsonify({"error": f"Resim işleme hatası: {str(e)}"}), 500
+
+    print(f"[DEBUG] Gönderilen payload: {json.dumps(payload, indent=2)}")
+
+    try:
+        # Ollama API'ye istek gönder
+        response = requests.post(
+            'http://127.0.0.1:11434/api/generate',
+            json=payload,  # JSON formatında gönderiliyor
+            headers={"Content-Type": "application/json"},
+            stream=True,
+        )
+
+        # Yanıtı parça parça işlemek için birikmiş metni tutacak bir değişken
+        full_response = ""
+
+        # Streaming yanıtları işleme
+        if response.status_code == 200:
             for line in response.iter_lines():
                 if line:  # Boş olmayan satırları işle
                     try:
@@ -563,15 +591,17 @@ def ollama_interact():
                         full_response += json_line.get("response", "")
                     except json.JSONDecodeError as e:
                         print(f"JSON ayrıştırma hatası: {str(e)}")
-            
+
             log_llama_chat(user_id, user_input, full_response)
-            
+
             # Tam yanıtı döndür
             return jsonify({"success": True, "response": full_response})
-        except Exception as e:
-            return jsonify({"error": f"Streaming işleme hatası: {str(e)}"}), 500
-    else:
-        return jsonify({"error": "Ollama yanıt vermedi", "status_code": response.status_code}), 500
+        else:
+            print(f"[DEBUG] Ollama API Hatası: {response.status_code} - {response.text}")
+            return jsonify({"error": "Ollama yanıt vermedi", "status_code": response.status_code}), 500
+    except Exception as e:
+        print(f"[DEBUG] İstek gönderme hatası: {str(e)}")
+        return jsonify({"error": f"İstek gönderme hatası: {str(e)}"}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

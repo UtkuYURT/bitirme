@@ -30,7 +30,11 @@ content %}
         rows="3"
         placeholder="Bir şeyler yazın..."
       ></textarea>
-      <div class="prompt-button-div">
+      <div class="mt-3">
+        <label for="image-upload">Bir resim yükleyin (isteğe bağlı):</label>
+        <input type="file" id="image-upload" accept="image/*" />
+      </div>
+      <div class="prompt-button-div mt-3">
         <button onclick="sendRequest()" id="prompt-button">Gönder</button>
       </div>
       <div id="response"></div>
