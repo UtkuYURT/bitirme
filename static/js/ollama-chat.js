@@ -13,7 +13,6 @@ function sendRequest() {
     formData.append("image", imageInput.files[0]);
   }
 
-  // Spinner'ı göster
   document.getElementById("spinner").style.display = "block";
   document.getElementById("response").innerHTML = "";
 
@@ -23,13 +22,28 @@ function sendRequest() {
   })
     .then((response) => response.json())
     .then((data) => {
-      // Spinner'ı gizle
       document.getElementById("spinner").style.display = "none";
 
       if (data.success) {
-        document.getElementById(
-          "response"
-        ).innerHTML = `<strong>Ollama Yanıtı:</strong><br>${data.response}`;
+        const chatHistory = document.getElementById("chat-history");
+
+        // Kullanıcı mesajını ekle
+        const userMessage = document.createElement("div");
+        userMessage.className = "user-message";
+        userMessage.innerText = `Kullanıcı: ${prompt}`;
+        chatHistory.appendChild(userMessage);
+
+        // Model yanıtını ekle
+        const modelMessage = document.createElement("div");
+        modelMessage.className = "model-message";
+        modelMessage.innerText = `Model: ${data.response}`;
+        chatHistory.appendChild(modelMessage);
+
+        // Sohbet geçmişini kaydır
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+
+        document.getElementById("response").innerHTML = "";
+        document.getElementById("prompt").value = "";
       } else {
         document.getElementById(
           "response"

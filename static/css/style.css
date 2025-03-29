@@ -308,3 +308,24 @@ button.btn-remove:hover {
     transform: rotate(360deg);
   }
 }
+
+.chat-history {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  padding: 10px;
+  margin-bottom: 15px;
+  background-color: #f9f9f9;
+}
+
+.user-message {
+  text-align: left;
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.model-message {
+  text-align: right;
+  color: #007bff;
+  margin-bottom: 5px;
+}

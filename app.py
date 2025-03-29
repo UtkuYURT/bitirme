@@ -543,22 +543,24 @@ def ollama_interact():
     user_input = request.form.get('input', '')
     image_file = request.files.get('image')
 
+    # Sohbet geçmişini session'da tut
+    if 'chat_history' not in session:
+        session['chat_history'] = []
+
     # Ollama API'ye gönderilecek veriler
-    payload = {"model": "llava:latest", "prompt": user_input}
+    chat_history = session['chat_history']
+    prompt = "\n".join(chat_history) + f"\nKullanıcı: {user_input}\nModel:"
+
+    payload = {"model": "llava:latest", "prompt": prompt}
 
     # Eğer bir resim yüklendiyse, base64 formatına dönüştür
     if image_file:
         try:
-            # Resmi PIL ile aç
             image = Image.open(image_file)
-            
-            # Resmi optimize etmek için yeniden boyutlandırma (isteğe bağlı)
-            image = image.convert("RGB")  # Renk modunu RGB'ye çevir
+            image = image.convert("RGB")
             buffer = io.BytesIO()
-            image.save(buffer, format="JPEG")  # Resmi JPEG formatında kaydet
+            image.save(buffer, format="JPEG")
             buffer.seek(0)
-
-            # Base64 formatına dönüştür
             base64_image = base64.b64encode(buffer.read()).decode('utf-8')
             payload["images"] = [base64_image]
             print(f"[DEBUG] Resim base64 formatına dönüştürüldü.")
@@ -569,32 +571,30 @@ def ollama_interact():
     print(f"[DEBUG] Gönderilen payload: {json.dumps(payload, indent=2)}")
 
     try:
-        # Ollama API'ye istek gönder
         response = requests.post(
             'http://127.0.0.1:11434/api/generate',
-            json=payload,  # JSON formatında gönderiliyor
+            json=payload,
             headers={"Content-Type": "application/json"},
             stream=True,
         )
 
-        # Yanıtı parça parça işlemek için birikmiş metni tutacak bir değişken
         full_response = ""
 
-        # Streaming yanıtları işleme
         if response.status_code == 200:
             for line in response.iter_lines():
-                if line:  # Boş olmayan satırları işle
+                if line:
                     try:
-                        # Her bir JSON nesnesini ayrıştır
                         json_line = json.loads(line.decode('utf-8'))
-                        # Yanıt metnini biriktir
                         full_response += json_line.get("response", "")
                     except json.JSONDecodeError as e:
                         print(f"JSON ayrıştırma hatası: {str(e)}")
 
+            # Sohbet geçmişine yeni mesajları ekle
+            session['chat_history'].append(f"Kullanıcı: {user_input}")
+            session['chat_history'].append(f"Model: {full_response}")
+
             log_llama_chat(user_id, user_input, full_response)
 
-            # Tam yanıtı döndür
             return jsonify({"success": True, "response": full_response})
         else:
             print(f"[DEBUG] Ollama API Hatası: {response.status_code} - {response.text}")
