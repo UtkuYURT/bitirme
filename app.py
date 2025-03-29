@@ -15,6 +15,7 @@ from sklearn.linear_model import LinearRegression
 import base64
 from PIL import Image
 import io
+from googletrans import Translator
 
 app = Flask(__name__)
 CORS(app)
@@ -547,9 +548,27 @@ def ollama_interact():
     if 'chat_history' not in session:
         session['chat_history'] = []
 
+    # Google Translate API ile çeviri
+    translator = Translator()
+
+    # Kullanıcı prompt'unun dilini algıla
+    detected_language = translator.detect(user_input).lang
+    print(f"[DEBUG] Algılanan dil: {detected_language}")
+
+    # Eğer prompt Türkçe ise İngilizce'ye çevir
+    if detected_language == 'tr':
+        translated_input = translator.translate(user_input, src='tr', dest='en').text
+        print(f"[DEBUG] Çevrilen prompt (Türkçe → İngilizce): {translated_input}")
+    else:
+        translated_input = user_input  # Prompt zaten İngilizce ise çeviri yapma
+
     # Ollama API'ye gönderilecek veriler
     chat_history = session['chat_history']
-    prompt = "\n".join(chat_history) + f"\nKullanıcı: {user_input}\nModel:"
+    translated_chat_history = [
+        translator.translate(message, src='tr', dest='en').text if "Kullanıcı:" in message and detected_language == 'tr' else message
+        for message in chat_history
+    ]
+    prompt = "\n".join(translated_chat_history) + f"\nUser: {translated_input}\nModel:"
 
     payload = {"model": "llava:latest", "prompt": prompt}
 
@@ -589,13 +608,20 @@ def ollama_interact():
                     except json.JSONDecodeError as e:
                         print(f"JSON ayrıştırma hatası: {str(e)}")
 
+            # Model yanıtını Türkçe'ye çevir (Eğer prompt Türkçe ise)
+            if detected_language == 'tr':
+                translated_response = translator.translate(full_response, src='en', dest='tr').text
+                print(f"[DEBUG] Çevrilen yanıt (İngilizce → Türkçe): {translated_response}")
+            else:
+                translated_response = full_response  # Yanıt zaten İngilizce ise çeviri yapma
+
             # Sohbet geçmişine yeni mesajları ekle
             session['chat_history'].append(f"Kullanıcı: {user_input}")
-            session['chat_history'].append(f"Model: {full_response}")
+            session['chat_history'].append(f"Model: {translated_response}")
 
-            log_llama_chat(user_id, user_input, full_response)
+            log_llama_chat(user_id, user_input, translated_response)
 
-            return jsonify({"success": True, "response": full_response})
+            return jsonify({"success": True, "response": translated_response})
         else:
             print(f"[DEBUG] Ollama API Hatası: {response.status_code} - {response.text}")
             return jsonify({"error": "Ollama yanıt vermedi", "status_code": response.status_code}), 500

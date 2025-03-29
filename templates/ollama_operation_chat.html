@@ -40,8 +40,14 @@ content %}
       </div>
       {% endif %}
       <textarea id="prompt" rows="3" placeholder="Bir şeyler yazın...">
-{{ prompt }}</textarea
-      >
+{{ prompt }}</textarea>
+      <div class="mt-3">
+        <label for="image-upload">Bir resim yükleyin (isteğe bağlı):</label>
+        <input type="file" id="image-upload" accept="image/*" />
+      </div>
+      <div id="chat-history" class="chat-history">
+        <!-- Sohbet geçmişi buraya eklenecek -->
+      </div>
       <div class="prompt-button-div">
         <button onclick="sendRequest()" id="prompt-button">Gönder</button>
       </div>
