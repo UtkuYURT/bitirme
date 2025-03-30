@@ -544,9 +544,8 @@ def ollama_interact():
     user_input = request.form.get('input', '')
     image_file = request.files.get('image')
 
-    # Sohbet geçmişini session'da tut
-    if 'chat_history' not in session:
-        session['chat_history'] = []
+    # Sohbet geçmişini sıfırlıyoruz, sadece yeni mesaj olacak
+    session['chat_history'] = []
 
     # Google Translate API ile çeviri
     translator = Translator()
@@ -563,12 +562,7 @@ def ollama_interact():
         translated_input = user_input  # Prompt zaten İngilizce ise çeviri yapma
 
     # Ollama API'ye gönderilecek veriler
-    chat_history = session['chat_history']
-    translated_chat_history = [
-        translator.translate(message, src='tr', dest='en').text if "Kullanıcı:" in message and detected_language == 'tr' else message
-        for message in chat_history
-    ]
-    prompt = "\n".join(translated_chat_history) + f"\nUser: {translated_input}\nModel:"
+    prompt = f"User: {translated_input}\nModel:"
 
     payload = {"model": "llava:latest", "prompt": prompt}
 
@@ -628,6 +622,7 @@ def ollama_interact():
     except Exception as e:
         print(f"[DEBUG] İstek gönderme hatası: {str(e)}")
         return jsonify({"error": f"İstek gönderme hatası: {str(e)}"}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True)
