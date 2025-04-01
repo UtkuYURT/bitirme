@@ -162,6 +162,54 @@ def save_graph(values, operation, result, user_id):
         print(f"Grafik kaydetme hatası: {str(e)}")
         return None
     
+def merge_images(image1, image2):
+    try:
+        # İki resmi aç
+        img1 = Image.open(image1).convert("RGB")
+        img2 = Image.open(image2).convert("RGB")
+
+        # Resimlerin boyutlarını al
+        width1, height1 = img1.size
+        width2, height2 = img2.size
+
+        # Yeni resmin genişliği ve yüksekliği
+        total_width = width1 + width2
+        max_height = max(height1, height2)
+
+        # Yeni bir boş resim oluştur
+        merged_image = Image.new("RGB", (total_width, max_height), (255, 255, 255))
+
+        # İlk resmi yapıştır
+        merged_image.paste(img1, (0, 0))
+
+        # İkinci resmi yapıştır
+        merged_image.paste(img2, (width1, 0))
+
+        # Birleştirilen resmi geçici bir dosyaya kaydet
+        merged_image_path = os.path.join("static", "merged_images", "merged_image.jpg")
+        os.makedirs(os.path.dirname(merged_image_path), exist_ok=True)
+        merged_image.save(merged_image_path)
+
+        return merged_image_path
+    except Exception as e:
+        print(f"[DEBUG] Resimleri birleştirme hatası: {str(e)}")
+        return None
+
+def save_uploaded_images(image_files):
+    saved_image_paths = []
+    upload_dir = os.path.join("static", "uploaded_images")
+    os.makedirs(upload_dir, exist_ok=True)
+
+    for image_file in image_files:
+        try:
+            image_path = os.path.join(upload_dir, image_file.filename)
+            image_file.save(image_path)
+            saved_image_paths.append(image_path)
+        except Exception as e:
+            print(f"[DEBUG] Görsel kaydetme hatası: {str(e)}")
+    
+    return saved_image_paths
+
 # ! Routes
 @app.route('/')
 def home():
@@ -542,7 +590,10 @@ def ollama_interact():
     print(f"[DEBUG] Kullanıcı ID: {user_id}")
 
     user_input = request.form.get('input', '')
-    image_file = request.files.get('image')
+    image_files = request.files.getlist('image')  # Birden fazla resim al
+
+    # Yüklenen görselleri kaydet
+    uploaded_image_paths = save_uploaded_images(image_files)
 
     # Sohbet geçmişini sıfırlıyoruz, sadece yeni mesaj olacak
     session['chat_history'] = []
@@ -566,17 +617,27 @@ def ollama_interact():
 
     payload = {"model": "llava:latest", "prompt": prompt}
 
-    # Eğer bir resim yüklendiyse, base64 formatına dönüştür
-    if image_file:
+    # Eğer iki resim yüklendiyse, birleştir
+    merged_image_path = None
+    if len(image_files) == 2:
+        merged_image_path = merge_images(image_files[0], image_files[1])
+        if merged_image_path:
+            with open(merged_image_path, "rb") as img_file:
+                base64_image = base64.b64encode(img_file.read()).decode('utf-8')
+            payload["images"] = [base64_image]
+            print(f"[DEBUG] Resimler birleştirildi ve base64 formatına dönüştürüldü.")
+        else:
+            return jsonify({"error": "Resimler birleştirilemedi"}), 500
+    elif len(image_files) == 1:
         try:
-            image = Image.open(image_file)
+            image = Image.open(image_files[0])
             image = image.convert("RGB")
             buffer = io.BytesIO()
             image.save(buffer, format="JPEG")
             buffer.seek(0)
             base64_image = base64.b64encode(buffer.read()).decode('utf-8')
             payload["images"] = [base64_image]
-            print(f"[DEBUG] Resim base64 formatına dönüştürüldü.")
+            print(f"[DEBUG] Tek resim base64 formatına dönüştürüldü.")
         except Exception as e:
             print(f"[DEBUG] Resim işleme hatası: {str(e)}")
             return jsonify({"error": f"Resim işleme hatası: {str(e)}"}), 500
@@ -615,7 +676,12 @@ def ollama_interact():
 
             log_llama_chat(user_id, user_input, translated_response)
 
-            return jsonify({"success": True, "response": translated_response})
+            return jsonify({
+                "success": True,
+                "response": translated_response,
+                "merged_image_url": f"/{merged_image_path}" if merged_image_path else None,
+                "uploaded_images": [f"/{path}" for path in uploaded_image_paths]
+            })
         else:
             print(f"[DEBUG] Ollama API Hatası: {response.status_code} - {response.text}")
             return jsonify({"error": "Ollama yanıt vermedi", "status_code": response.status_code}), 500

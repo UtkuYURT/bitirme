@@ -8,9 +8,32 @@ function sendRequest() {
     return;
   }
 
+  // Görselleri yükleme sırasında hemen göster
+  const uploadedImagesContainer = document.getElementById("uploaded-images");
+  uploadedImagesContainer.innerHTML = ""; // Önceki görselleri temizle
+  if (imageInput.files.length) {
+    for (let i = 0; i < imageInput.files.length; i++) {
+      const file = imageInput.files[i];
+      const reader = new FileReader();
+
+      reader.onload = function (e) {
+        const img = document.createElement("img");
+        img.src = e.target.result; // Görseli base64 olarak göster
+        img.style.maxWidth = "150px";
+        img.style.maxHeight = "150px";
+        img.style.border = "1px solid #ccc";
+        uploadedImagesContainer.appendChild(img);
+      };
+
+      reader.readAsDataURL(file); // Görseli base64'e dönüştür
+    }
+  }
+
   formData.append("input", prompt);
   if (imageInput.files.length) {
-    formData.append("image", imageInput.files[0]);
+    for (let i = 0; i < imageInput.files.length; i++) {
+      formData.append("image", imageInput.files[i]);
+    }
   }
 
   document.getElementById("spinner").style.display = "block";
@@ -38,6 +61,13 @@ function sendRequest() {
         modelMessage.className = "model-message";
         modelMessage.innerText = `Model: ${data.response}`;
         chatHistory.appendChild(modelMessage);
+
+        // Birleştirilmiş görseli göster
+        if (data.merged_image_url) {
+          const mergedImage = document.getElementById("merged-image");
+          mergedImage.src = data.merged_image_url;
+          mergedImage.style.display = "block";
+        }
 
         // Sohbet geçmişini kaydır
         chatHistory.scrollTop = chatHistory.scrollHeight;
