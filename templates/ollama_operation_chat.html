@@ -48,7 +48,7 @@ content %}
       <textarea id="prompt" rows="3" placeholder="Bir şeyler yazın...">
 {{ prompt }}</textarea
       >
-      <div class="mt-3">
+      <div class="mt-3 d-none">
         <label for="image-upload">Bir resim yükleyin (isteğe bağlı):</label>
         <input type="file" id="image-upload" accept="image/*" multiple />
       </div>
@@ -58,11 +58,11 @@ content %}
       <div class="prompt-button-div mt-3">
         <button onclick="sendRequest()" id="prompt-button">Gönder</button>
       </div>
-      <div id="response"></div>
+      <div id="response" class="d-none"></div>
       <div id="spinner" style="display: none; margin-top: 20px">
         <div class="loader"></div>
       </div>
-      <div id="merged-image-container" style="margin-top: 20px">
+      <div id="merged-image-container" class="d-none" style="margin-top: 20px">
         <img
           id="merged-image"
           src=""
@@ -70,7 +70,11 @@ content %}
           style="max-width: 100%; display: none"
         />
       </div>
-      <div id="uploaded-images-container" style="margin-top: 20px">
+      <div
+        id="uploaded-images-container"
+        class="d-none"
+        style="margin-top: 20px"
+      >
         <h5>Yüklenen Görseller:</h5>
         <div
           id="uploaded-images"

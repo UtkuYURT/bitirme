@@ -606,49 +606,34 @@ def ollama_operation_chat():
     images = session.get('images', [])
     return render_template('ollama_operation_chat.html', selected_rows=selected_rows, prompt=prompt, images=images)
 
-# !opmopvapov
-
-@app.route('/ollama', methods=['POST'])
-def ollama_interact():
-    user_id = is_user_logged_in()
-
-    user_input = request.form.get('input', '')
-    image_files = request.files.getlist('image')  # Birden fazla resim
-
-    uploaded_image_paths = save_uploaded_images(image_files)
-
-    session['chat_history'] = []
-
-    # Google Translate API
+# !ollama_interact yardımcı fonksiyonlar
+def translate_prompt_if_needed(user_input):
     translator = Translator()
-
-    # Prompt dili
     detected_language = translator.detect(user_input).lang
     print(f"[DEBUG] Algılanan dil: {detected_language}")
 
-    # Prompt Türkçe ise İngilizce çevir
     if detected_language == 'tr':
         translated_input = translator.translate(user_input, src='tr', dest='en').text
         print(f"[DEBUG] Çevrilen prompt (Türkçe → İngilizce): {translated_input}")
     else:
-        translated_input = user_input  # Prompt İngilizce ise çevirme
+        translated_input = user_input
 
-    prompt = f"User: {translated_input}\nModel:"
+    return translated_input, detected_language
 
-    payload = {"model": "llava:latest", "prompt": prompt}
-
-    # 2 resim varsa birleştir
-    merged_image_path = None
+def prepare_base64_image_payload(prompt, image_files):
+    payload = {"model": "llava:latest", "prompt": f"User: {prompt}\nModel:"}
     base64_image = None
+    merged_image_path = None
+
     if len(image_files) == 2:
         merged_image_path = merge_images(image_files[0], image_files[1])
-        if merged_image_path:
-            with open(merged_image_path, "rb") as img_file:
-                base64_image = base64.b64encode(img_file.read()).decode('utf-8')
-            payload["images"] = [base64_image]
-            print(f"[DEBUG] Resimler birleştirildi ve base64 formatına dönüştürüldü.")
-        else:
-            return jsonify({"error": "Resimler birleştirilemedi"}), 500
+        if not merged_image_path:
+            raise Exception("Resimler birleştirilemedi")
+
+        with open(merged_image_path, "rb") as img_file:
+            base64_image = base64.b64encode(img_file.read()).decode('utf-8')
+        payload["images"] = [base64_image]
+        print(f"[DEBUG] Resimler birleştirildi ve base64 formatına dönüştürüldü.")
     elif len(image_files) == 1:
         try:
             image = Image.open(image_files[0])
@@ -660,55 +645,75 @@ def ollama_interact():
             payload["images"] = [base64_image]
             print(f"[DEBUG] Tek resim base64 formatına dönüştürüldü.")
         except Exception as e:
-            print(f"[DEBUG] Resim işleme hatası: {str(e)}")
-            return jsonify({"error": f"Resim işleme hatası: {str(e)}"}), 500
+            raise Exception(f"Resim işleme hatası: {str(e)}")
+
+    return payload, base64_image, merged_image_path
+
+def call_ollama_api(payload):
+    response = requests.post(
+        'http://127.0.0.1:11434/api/generate',
+        json=payload,
+        headers={"Content-Type": "application/json"},
+        stream=True,
+    )
+
+    if response.status_code != 200:
+        raise Exception(f"Ollama API Hatası: {response.status_code} - {response.text}")
+
+    full_response = ""
+    for line in response.iter_lines():
+        if line:
+            try:
+                json_line = json.loads(line.decode('utf-8'))
+                full_response += json_line.get("response", "")
+            except json.JSONDecodeError as e:
+                print(f"JSON ayrıştırma hatası: {str(e)}")
+
+    return full_response
+
+def translate_response_if_needed(response, detected_language):
+    if detected_language == 'tr':
+        translator = Translator()
+        translated_response = translator.translate(response, src='en', dest='tr').text
+        print(f"[DEBUG] Çevrilen yanıt (İngilizce → Türkçe): {translated_response}")
+        return translated_response
+    return response
+
+def append_to_chat_history(user_input, translated_response):
+    session['chat_history'].append(f"Kullanıcı: {user_input}")
+    session['chat_history'].append(f"Model: {translated_response}")
+
+def build_final_response(translated_response, merged_image_path, uploaded_image_paths):
+    return jsonify({
+        "success": True,
+        "response": translated_response,
+        "merged_image_url": f"/{merged_image_path}" if merged_image_path else None,
+        "uploaded_images": [f"/{path}" for path in uploaded_image_paths]
+    })
+
+@app.route('/ollama', methods=['POST'])
+def ollama_interact():
+    user_id = is_user_logged_in()
+    user_input = request.form.get('input', '')
+    image_files = request.files.getlist('image')
+
+    uploaded_image_paths = save_uploaded_images(image_files)
+    session['chat_history'] = []
+
+    translated_input, detected_language = translate_prompt_if_needed(user_input)
+    payload, base64_image, merged_image_path = prepare_base64_image_payload(translated_input, image_files)
 
     try:
-        response = requests.post(
-            'http://127.0.0.1:11434/api/generate',
-            json=payload,
-            headers={"Content-Type": "application/json"},
-            stream=True,
-        )
+        full_response = call_ollama_api(payload)
+        translated_response = translate_response_if_needed(full_response, detected_language)
 
-        full_response = ""
+        append_to_chat_history(user_input, translated_response)
+        log_llama_chat(user_id, user_input, translated_response, image_data=base64_image)
 
-        if response.status_code == 200:
-            for line in response.iter_lines():
-                if line:
-                    try:
-                        json_line = json.loads(line.decode('utf-8'))
-                        full_response += json_line.get("response", "")
-                    except json.JSONDecodeError as e:
-                        print(f"JSON ayrıştırma hatası: {str(e)}")
-
-            # Yanıtı Türkçe'ye çevir (Prompt Türkçe)
-            if detected_language == 'tr':
-                translated_response = translator.translate(full_response, src='en', dest='tr').text
-                print(f"[DEBUG] Çevrilen yanıt (İngilizce → Türkçe): {translated_response}")
-            else:
-                translated_response = full_response  # Yanıt İngilizce ise çevirme
-
-            # Sohbet geçmişine yeni mesajları ekle
-            session['chat_history'].append(f"Kullanıcı: {user_input}")
-            session['chat_history'].append(f"Model: {translated_response}")
-
-            log_llama_chat(user_id, user_input, translated_response, image_data=base64_image)
-
-            return jsonify({
-                "success": True,
-                "response": translated_response,
-                "merged_image_url": f"/{merged_image_path}" if merged_image_path else None,
-                "uploaded_images": [f"/{path}" for path in uploaded_image_paths]
-            })
-        else:
-            print(f"[DEBUG] Ollama API Hatası: {response.status_code} - {response.text}")
-            return jsonify({"error": "Ollama yanıt vermedi", "status_code": response.status_code}), 500
+        return build_final_response(translated_response, merged_image_path, uploaded_image_paths)
     except Exception as e:
-        print(f"[DEBUG] İstek gönderme hatası: {str(e)}")
-        return jsonify({"error": f"İstek gönderme hatası: {str(e)}"}), 500
-
-# !aopfopfpa
+        print(f"[DEBUG] Hata: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/ollama_logs')
 def ollama_logs():
