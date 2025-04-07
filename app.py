@@ -87,16 +87,16 @@ def create_dynamic_plot(values, operation, result):
         X = values[:, 0]  # Bağımsız değişken
         Y = values[:, 1]  # Bağımlı değişken
 
-        # Dağılım grafiği
+        #Dağılım grafiği
         plt.scatter(X, Y, color='blue', label='Veri Noktaları')
 
-        # Regresyon doğrusunu çiz
+        #Regresyon doğrusu
         slope = result.get('slope', 0)
         intercept = result.get('intercept', 0)
         regression_line = [slope * x + intercept for x in X]
         plt.plot(X, regression_line, color='red', label=f'Regresyon Doğrusu: y = {slope}x + {intercept}')
 
-        # Grafik başlıkları ve etiketler
+        #!Başlıklar
         plt.title('Regresyon Analizi')
         plt.xlabel('Bağımsız Değişken (X)')
         plt.ylabel('Bağımlı Değişken (Y)')
@@ -118,7 +118,6 @@ def create_dynamic_plot(values, operation, result):
 
 def save_graph(values, operation, result, user_id):
     try:
-        # Grafik oluştur
         plt.figure(figsize=(6, 4))
 
         if operation == 'regression':
@@ -128,20 +127,20 @@ def save_graph(values, operation, result, user_id):
             # Dağılım grafiği
             plt.scatter(X, Y, color='blue', label='Veri Noktaları')
 
-            # Regresyon doğrusunu çiz
+            # Regresyon doğrusu
             slope = result.get('slope', 0)
             intercept = result.get('intercept', 0)
             regression_line = [slope * x + intercept for x in X]
             plt.plot(X, regression_line, color='red', label=f'Regresyon Doğrusu: y = {slope}x + {intercept}')
 
-            # Grafik başlıkları ve etiketler
+            #!Başlıklar
             plt.title('Regresyon Analizi')
             plt.xlabel('Bağımsız Değişken (X)')
             plt.ylabel('Bağımlı Değişken (Y)')
             plt.legend()
 
         else:
-            # Aritmetik ortalama gibi işlemler için grafik
+            # Aritmetik ortalama vb. grafik
             plt.plot(values, label='Veri Seti', marker='o', color='blue')
             plt.axhline(result, color='red', linestyle='--', label=f'{OPERATIONS.get(operation, {}).get("title", "Sonuç")}: {result}')
             plt.title(f'{OPERATIONS.get(operation, {}).get("title", "Matematiksel İşlem")} Grafiği')
@@ -149,14 +148,14 @@ def save_graph(values, operation, result, user_id):
             plt.ylabel('Değer')
             plt.legend()
 
-        # Grafik dosyasını kaydet
+        # Grafiği kaydet
         graph_dir = os.path.join('static', 'graphs', str(user_id))
         os.makedirs(graph_dir, exist_ok=True)
         graph_path = os.path.join(graph_dir, f"{operation}_{datetime.now().strftime('%Y%m%d%H%M%S')}.png")
         plt.savefig(graph_path)
         plt.close()
 
-        print(f"Grafik kaydedildi: {graph_path}")  # Log ekleyin
+        print(f"Grafik kaydedildi: {graph_path}")
         return graph_path
     except Exception as e:
         print(f"Grafik kaydetme hatası: {str(e)}")
@@ -164,25 +163,21 @@ def save_graph(values, operation, result, user_id):
     
 def merge_images(image1, image2):
     try:
-        # İki resmi aç
         img1 = Image.open(image1).convert("RGB")
         img2 = Image.open(image2).convert("RGB")
 
-        # Resimlerin boyutlarını al
+        # Resimlerin boyutları
         width1, height1 = img1.size
         width2, height2 = img2.size
 
-        # Yeni resmin genişliği ve yüksekliği
+        # Birleştirilimiş resmin genişlik - yükseklik
         total_width = width1 + width2
         max_height = max(height1, height2)
 
-        # Yeni bir boş resim oluştur
+        # Boş resim
         merged_image = Image.new("RGB", (total_width, max_height), (255, 255, 255))
 
-        # İlk resmi yapıştır
         merged_image.paste(img1, (0, 0))
-
-        # İkinci resmi yapıştır
         merged_image.paste(img2, (width1, 0))
 
         # Birleştirilen resmi geçici bir dosyaya kaydet
@@ -209,6 +204,41 @@ def save_uploaded_images(image_files):
             print(f"[DEBUG] Görsel kaydetme hatası: {str(e)}")
     
     return saved_image_paths
+
+def process_selected_rows(selected_rows):
+    images = []
+    prompt = []
+
+    for row in selected_rows:
+        operation_type = row.get('operationType')
+        input_values = row.get('inputValues')
+        result = row.get('result')
+        graph = row.get('graph')
+
+        # Görseli base64 formatına dönüştür
+        graph_base64 = encode_graph_to_base64(graph)
+        if graph_base64:
+            images.append(graph_base64)
+
+        # Prompt oluştur
+        prompt.append(
+            f"{input_values} değerleri ile {operation_type} işlemi yaptım ve sonuç olarak {result} sonucunu aldım. "
+            f"Bu işleme ait grafik görselde yer alıyor."
+        )
+
+    prompt.append(f"Lütfen bu {len(selected_rows)} işlemi hem sayısal hem grafiklerdeki görsel bilgiler açısından karşılaştırır mısın?")
+    for i, image in enumerate(images):
+        prompt.append(f"Görsel {i + 1}: {image}")
+
+    return images, prompt
+
+def encode_graph_to_base64(graph_path):
+    try:
+        with open(graph_path, "rb") as graph_file:
+            return base64.b64encode(graph_file.read()).decode('utf-8')
+    except Exception as e:
+        print(f"[DEBUG] Grafik dosyası okunamadı: {str(e)}")
+        return None
 
 # ! Routes
 @app.route('/')
@@ -518,7 +548,7 @@ def operation_logs():
     if 'selected_rows' in session:
         session.pop('selected_rows', None)
 
-    # prompt session'ı varsa sıfırla
+    # prompt varsa sıfırla
     if 'prompt' in session:
         session.pop('prompt', None)
 
@@ -560,65 +590,56 @@ def ollama_chat():
 def ollama_operation_chat():
     if request.method == 'POST':
         selected_rows = request.json.get('selectedRows', [])
-
         if len(selected_rows) < 2:
             return jsonify({"success": False, "error": "Lütfen en az iki satır seçin!"}), 400
         
-        session['selected_rows'] = selected_rows  
-
-        prompt = []
-        for row in selected_rows:
-            operation_type = row.get('operationType') # işlem türü
-            input_values = row.get('inputValues') # işlemlerin girdi değerleri
-            result = row.get('result') # işlem sonucu
-            # prompt oluştur
-            prompt.append(f"{input_values} değerleri ile {operation_type} işlemi yaptım ve {result} sonucunu aldım.")
-        prompt.append(f"Bu {len(selected_rows)} işlemi karşılaştırır mısın?")
+        session['selected_rows'] = selected_rows
+        images, prompt = process_selected_rows(selected_rows)
+        
         session['prompt'] = " ".join(prompt)
+        session['images'] = images
 
         return jsonify({"success": True, "message": "İşlem başarıyla tamamlandı."})
 
     selected_rows = session.get('selected_rows', [])
     prompt = session.get('prompt', "")
-    return render_template('ollama_operation_chat.html', selected_rows=selected_rows, prompt=prompt)
+    images = session.get('images', [])
+    return render_template('ollama_operation_chat.html', selected_rows=selected_rows, prompt=prompt, images=images)
 
-# Ollama API 'YE İstek Gönderme
+# !opmopvapov
+
 @app.route('/ollama', methods=['POST'])
 def ollama_interact():
-    print(f"[DEBUG] session içeriği: {dict(session)}")
     user_id = is_user_logged_in()
-    print(f"[DEBUG] Kullanıcı ID: {user_id}")
 
     user_input = request.form.get('input', '')
-    image_files = request.files.getlist('image')  # Birden fazla resim al
+    image_files = request.files.getlist('image')  # Birden fazla resim
 
-    # Yüklenen görselleri kaydet
     uploaded_image_paths = save_uploaded_images(image_files)
 
-    # Sohbet geçmişini sıfırlıyoruz, sadece yeni mesaj olacak
     session['chat_history'] = []
 
-    # Google Translate API ile çeviri
+    # Google Translate API
     translator = Translator()
 
-    # Kullanıcı prompt'unun dilini algıla
+    # Prompt dili
     detected_language = translator.detect(user_input).lang
     print(f"[DEBUG] Algılanan dil: {detected_language}")
 
-    # Eğer prompt Türkçe ise İngilizce'ye çevir
+    # Prompt Türkçe ise İngilizce çevir
     if detected_language == 'tr':
         translated_input = translator.translate(user_input, src='tr', dest='en').text
         print(f"[DEBUG] Çevrilen prompt (Türkçe → İngilizce): {translated_input}")
     else:
-        translated_input = user_input  # Prompt zaten İngilizce ise çeviri yapma
+        translated_input = user_input  # Prompt İngilizce ise çevirme
 
-    # Ollama API'ye gönderilecek veriler
     prompt = f"User: {translated_input}\nModel:"
 
     payload = {"model": "llava:latest", "prompt": prompt}
 
-    # Eğer iki resim yüklendiyse, birleştir
+    # 2 resim varsa birleştir
     merged_image_path = None
+    base64_image = None
     if len(image_files) == 2:
         merged_image_path = merge_images(image_files[0], image_files[1])
         if merged_image_path:
@@ -642,8 +663,6 @@ def ollama_interact():
             print(f"[DEBUG] Resim işleme hatası: {str(e)}")
             return jsonify({"error": f"Resim işleme hatası: {str(e)}"}), 500
 
-    print(f"[DEBUG] Gönderilen payload: {json.dumps(payload, indent=2)}")
-
     try:
         response = requests.post(
             'http://127.0.0.1:11434/api/generate',
@@ -663,18 +682,18 @@ def ollama_interact():
                     except json.JSONDecodeError as e:
                         print(f"JSON ayrıştırma hatası: {str(e)}")
 
-            # Model yanıtını Türkçe'ye çevir (Eğer prompt Türkçe ise)
+            # Yanıtı Türkçe'ye çevir (Prompt Türkçe)
             if detected_language == 'tr':
                 translated_response = translator.translate(full_response, src='en', dest='tr').text
                 print(f"[DEBUG] Çevrilen yanıt (İngilizce → Türkçe): {translated_response}")
             else:
-                translated_response = full_response  # Yanıt zaten İngilizce ise çeviri yapma
+                translated_response = full_response  # Yanıt İngilizce ise çevirme
 
             # Sohbet geçmişine yeni mesajları ekle
             session['chat_history'].append(f"Kullanıcı: {user_input}")
             session['chat_history'].append(f"Model: {translated_response}")
 
-            log_llama_chat(user_id, user_input, translated_response)
+            log_llama_chat(user_id, user_input, translated_response, image_data=base64_image)
 
             return jsonify({
                 "success": True,
@@ -689,6 +708,25 @@ def ollama_interact():
         print(f"[DEBUG] İstek gönderme hatası: {str(e)}")
         return jsonify({"error": f"İstek gönderme hatası: {str(e)}"}), 500
 
+# !aopfopfpa
+
+@app.route('/ollama_logs')
+def ollama_logs():
+    user_id = session.get('user_id')
+
+    if not user_id:
+        flash("Kullanıcı giriş yapmamış", "file_danger")
+        return redirect(url_for('home'))
+    
+    if 'selected_rows' in session:
+        session.pop('selected_rows', None)
+
+    # prompt  varsa sıfırla
+    if 'prompt' in session:
+        session.pop('prompt', None)
+
+    logs = get_log_llama(user_id)
+    return render_template('ollama_logs.html', logs=logs)
 
 if __name__ == '__main__':
     app.run(debug=True)

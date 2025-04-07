@@ -1,0 +1,71 @@
+{% extends "partials/base.html" %} {% set show_sidebar = true %} {% set
+show_right_sidebar = false %} {% block title %} İşlem Geçmişi {% endblock %} {%
+block content %}
+
+<!-- sayfa başlangıcı -->
+
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%}
+<div id="file_div">
+  {% for category, message in messages %} {% if category == 'file_success' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ message }}
+  </div>
+  {% elif category == 'file_danger' %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ message }}
+  </div>
+  {% endif %} {% endfor %}
+</div>
+{% endif %} {% endwith %}
+
+<div id="file_div" data-file-name="{{ file_name }}">
+  <div class="card file-upload-card">
+    <div class="card-title">
+      <h3 class="text-center fw-bold">Ollama Log Kayıtları</h3>
+    </div>
+    <div class="card-body">
+      {% if logs %}
+      <div class="table-responsive">
+        <table class="table table-bordered table-hover table-operation-logs">
+          <thead>
+            <tr>
+              <th>Soru</th>
+              <th>Cevap</th>
+              <th>Fotoğraf</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in logs %}
+            <tr>
+              <td>{{ log[0] }}</td>
+              <td>{{ log[1] }}</td>
+              <td>
+                {% if log[2] %}
+                <img
+                  src="data:image/png;base64,{{ log[2] }}"
+                  alt="Fotoğraf"
+                  style="max-width: 100px; max-height: 100px"
+                />
+                {% else %} - {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <p class="text-center text-danger">Dosya içeriği bulunamadı.</p>
+      {% endif %}
+      <div class="text-center mt-2">
+        <button class="btn btn-file" type="submit">
+          <a href="{{ url_for('file_operations') }}"
+            >Dosya İşlemlerine Geri Dön</a
+          >
+        </button>
+      </div>
+    </div>
+  </div>
+
+  {% endblock %}
+</div>

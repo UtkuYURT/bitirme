@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const clickedCell = event.target;
       const lastCell = row.querySelector("td:last-child");
 
-      // Eğer tıklanan hücre son sütunsa, seçme işlemini engelle
+      // tıklanan hücre son sütunsa seçme
       if (clickedCell === lastCell || clickedCell.closest("button")) {
         return;
       }
@@ -22,21 +22,20 @@ function sendSelectedRowsToOllama() {
     ".table-operation-logs tbody tr.selected"
   );
 
-  // Eğer seçili satır yoksa veya yalnızca bir satır seçiliyse işlemi durdur
+  // Seçili satır yoksa veya bir satır seçiliyse işlemi yapma
   if (rows.length <= 1) {
     alert("Lütfen en az iki satır seçin!");
-    return; // Kodun devam etmesini engelle
+    return;
   }
 
-  // Seçili satırları topla
   rows.forEach((row) => {
     const operationType = row.querySelector("td:nth-child(1)").innerText.trim();
     const inputValues = row.querySelector("td:nth-child(2)").innerText.trim();
     const result = row.querySelector("td:nth-child(3)").innerText.trim();
-    selectedRows.push({ operationType, inputValues, result });
+    const graph = row.querySelector("td:nth-child(4) img").src.trim();
+    selectedRows.push({ operationType, inputValues, result, graph });
   });
 
-  // Eğer yeterli satır seçildiyse, fetch isteğini gönder
   fetch("/ollama_operation_chat", {
     method: "POST",
     headers: {
@@ -85,11 +84,11 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function deleteLog(operation, inputValues, result, graph) {
-  console.log("Silme işlemi için gönderilen değerler:");
-  console.log("Operation:", operation);
-  console.log("Input Values:", inputValues);
-  console.log("Result:", result);
-  console.log("Graph:", graph);
+  console.log("[DEBUG] Silme işlemi için gönderilen değerler:");
+  console.log("[DEBUG] Operation:", operation);
+  console.log("[DEBUG] Input Values:", inputValues);
+  console.log("[DEBUG] Result:", result);
+  console.log("[DEBUG] Graph:", graph);
 
   if (!confirm("Bu log kaydını silmek istediğinizden emin misiniz?")) {
     return;

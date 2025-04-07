@@ -64,7 +64,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Sidebar kapa aç
 document.addEventListener("DOMContentLoaded", function () {
-  // class kullanarak sidebar-control elementlerini seç
   document.querySelectorAll(".sidebar-control").forEach((control) => {
     control.addEventListener("click", function (e) {
       e.preventDefault();

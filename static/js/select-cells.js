@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // Tüm seçili hücreleri tutacak ana dizi
+  // Tüm seçili hücreleri tutacak dizi
   let selectedCells = [];
 
   const cells = document.querySelectorAll("td");
@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", function () {
   function toggleRowSelection(row, select) {
     Array.from(row.cells).forEach((cell, index) => {
       if (index > 0) {
-        // İlk hücreyi (satır başlığı) hariç tut
+        // (satır başlığı) hariç tut
         if (select) {
           if (!selectedCells.includes(cell)) {
             cell.classList.add("selected");
@@ -64,8 +64,8 @@ document.addEventListener("DOMContentLoaded", function () {
           (cell, index) => index === 0 || cell.classList.contains("selected")
         );
 
-        toggleRowSelection(row, !isRowSelected); // Seçimi tersine çevir
-        console.log("Tüm seçili hücreler (satır):", selectedCells);
+        toggleRowSelection(row, !isRowSelected);
+        console.log("[DEBUG] Tüm seçili hücreler (satır):", selectedCells);
       });
     }
   });
@@ -78,18 +78,18 @@ document.addEventListener("DOMContentLoaded", function () {
         return cell && cell.classList.contains("selected");
       });
 
-      toggleColumnSelection(index, !isColumnSelected); // Seçimi tersine çevir
-      console.log("Tüm seçili hücreler (sütun):", selectedCells);
+      toggleColumnSelection(index, !isColumnSelected);
+      console.log("[DEBUG] Tüm seçili hücreler (sütun):", selectedCells);
     });
   });
 
-  // Hücre seçimi için kod
+  // Hücre seçimi
   cells.forEach((cell) => {
     cell.addEventListener("click", function () {
       // Satır başlığını (row[0]) kontrol et ve hariç tut
       const parentRow = cell.parentElement; // Hücrenin ait olduğu satırı al
       if (parentRow && parentRow.cells[0] === cell) {
-        // Eğer tıklanan hücre satır başlığıysa, hiçbir şey yapma
+        // Tıklanan hücre satır başlığıysa, hiçbir şey yapma
         return;
       }
 
@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", function () {
         selectedCells.push(cell);
       }
 
-      console.log("Tüm seçili hücreler:", selectedCells);
+      console.log("[DEBUG] Tüm seçili hücreler:", selectedCells);
     });
   });
 
@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", function () {
       cell.classList.remove("selected");
     });
     selectedCells = []; // Diziyi temizle
-    console.log("Seçimler temizlendi");
+    console.log("[DEBUG] Seçimler temizlendi");
   });
 
   /**
@@ -143,7 +143,7 @@ document.addEventListener("DOMContentLoaded", function () {
         return acc;
       }, {});
 
-      console.log("Sütun grupları (columnGroups):", columnGroups);
+      console.log("[DEBUG] Sütun grupları (columnGroups):", columnGroups);
 
       const columns = Object.keys(columnGroups);
       if (columns.length < 2) {
@@ -151,19 +151,21 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
       }
 
-      // Sütun gruplarını iki boyutlu bir diziye dönüştür (sütun bazlı)
+      // Sütun gruplarını iki boyutlu bir diziye dönüştür
       const regressionValues = columns.map((col) => columnGroups[col]);
 
-      console.log("Backend'e gönderilecek regressionValues:", regressionValues);
+      console.log(
+        "[DEBUG] Backend'e gönderilecek regressionValues:",
+        regressionValues
+      );
 
-      // Backend'e gönder
       fetch("/mathematical_operations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          selectedValues: regressionValues, // Sütun bazlı dizi gönderiyoruz
+          selectedValues: regressionValues,
           operation: operation,
         }),
       })
@@ -179,13 +181,12 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         })
         .catch((error) => {
-          console.error("Veri gönderilirken hata oluştu:", error);
+          console.error("[DEBUG] Veri gönderilirken hata oluştu:", error);
         });
 
       return;
     }
 
-    // Diğer işlemler için
     const selectedValues = selectedCells.map((cell) => cell.textContent.trim());
     fetch("/mathematical_operations", {
       method: "POST",
@@ -209,7 +210,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       })
       .catch((error) => {
-        console.error("Veri gönderilirken hata oluştu:", error);
+        console.error("[DEBUG] Veri gönderilirken hata oluştu:", error);
       });
   }
 

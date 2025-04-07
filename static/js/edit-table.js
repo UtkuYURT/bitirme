@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-  // Genel değişkenler
+  // Değişkenler
   const fileName = document
     .getElementById("file_div")
     ?.getAttribute("data-file-name");
@@ -11,7 +11,6 @@ document.addEventListener("DOMContentLoaded", function () {
   let selectedRow = null;
   let selectedColumn = null;
 
-  // Veritabanını güncelleme fonksiyonu
   function updateDatabase(data) {
     fetch(`/main_page/${fileName}`, {
       method: "POST",
@@ -31,8 +30,7 @@ document.addEventListener("DOMContentLoaded", function () {
       })
       .catch((error) => console.error("AJAX hatası:", error));
   }
-  
-  // Hücre güncelleme fonksiyonu
+
   function updateCell(cell) {
     const rowIndex = cell.getAttribute("data-row");
     const columnName = cell.getAttribute("data-column");
@@ -43,33 +41,32 @@ document.addEventListener("DOMContentLoaded", function () {
         update_cell: true,
         row_index: parseInt(rowIndex),
         column_name: columnName,
-        new_value: newValue, // 'value' yerine 'new_value' kullanıldı
+        new_value: newValue,
       },
     ];
 
-    console.log("Gönderilen veri:", JSON.stringify(data, null, 2)); // Veriyi kontrol et
+    console.log("[DEBUG] Gönderilen veri:", JSON.stringify(data, null, 2));
     updateDatabase(data);
 
     console.log(
-      `Hücre güncellendi: Satır ${rowIndex}, Sütun ${columnName}, Değer: ${newValue}`
+      `[DEBUG] Hücre güncellendi: Satır ${rowIndex}, Sütun ${columnName}, Değer: ${newValue}`
     );
   }
 
-  // Hücrelere düzenleme olay dinleyicisi ekleme
+  // Hücrelere düzenleme dinleyicisi ekle
   function attachCellListeners() {
     const editableCells = table.querySelectorAll(".editable-cell");
     editableCells.forEach((cell) => {
       cell.addEventListener("blur", function () {
-        updateCell(cell); // Hücre düzenlemesi tamamlandığında güncelle
+        updateCell(cell);
       });
     });
   }
 
-  // Satır ekleme fonksiyonu
   function addRow() {
     const tbody = table.querySelector("tbody");
     if (!tbody) {
-      console.error("Tablo gövdesi bulunamadı");
+      console.error("[DEBUG] Tablo gövdesi bulunamadı");
       return;
     }
 
@@ -115,10 +112,9 @@ document.addEventListener("DOMContentLoaded", function () {
       },
     ]);
 
-    attachCellListeners(); // Yeni hücrelere olay dinleyicisi ekle
+    attachCellListeners();
   }
 
-  // Satır silme fonksiyonu
   function deleteRow() {
     if (!selectedRow) {
       alert("Lütfen silmek için bir satır seçin");
@@ -143,7 +139,6 @@ document.addEventListener("DOMContentLoaded", function () {
     ]);
   }
 
-  // Sütun ekleme fonksiyonu
   function addColumn() {
     const newColumnName = prompt("Yeni sütun adını giriniz:");
     if (!newColumnName || newColumnName.trim() === "") {
@@ -174,10 +169,9 @@ document.addEventListener("DOMContentLoaded", function () {
       },
     ]);
 
-    attachCellListeners(); // Yeni hücrelere olay dinleyicisi ekle
+    attachCellListeners(); // Yeni hücrelere dinleyici ekle
   }
 
-  // Sütun silme fonksiyonu
   function deleteColumn() {
     if (!selectedColumn) {
       alert("Lütfen silmek için bir sütun seçin");
@@ -206,7 +200,7 @@ document.addEventListener("DOMContentLoaded", function () {
     selectedColumn = null;
   }
 
-  // Satır ve sütun seçme işlemleri
+  // Satır ve sütun seçme
   if (table) {
     table.addEventListener("click", function (e) {
       const row = e.target.closest("tr");
@@ -247,6 +241,6 @@ document.addEventListener("DOMContentLoaded", function () {
   if (deleteColumnButton)
     deleteColumnButton.addEventListener("click", deleteColumn);
 
-  // Başlangıçta tüm hücrelere olay dinleyicisi ekle
+  // Başlangıçta tüm hücrelere dinleyici ekle
   attachCellListeners();
 });

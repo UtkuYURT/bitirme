@@ -1,12 +1,13 @@
-{% extends "partials/base.html" %} {% set show_sidebar = true %} {% set show_right_sidebar = false %} {% block title %}Llama{% endblock %} {% block content %}
+{% extends "partials/base.html" %} {% set show_sidebar = true %} {% set
+show_right_sidebar = false %} {% block title %}Llama{% endblock %} {% block
+content %}
 
 <!-- sayfa başlangıcı -->
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%}
 <div id="file_div">
-  {% for category, message in messages %}
-  {% if category == 'file_success' %}
+  {% for category, message in messages %} {% if category == 'file_success' %}
   <div class="alert alert-success alert-dismissible fade show" role="alert">
     {{ message }}
   </div>
@@ -14,11 +15,9 @@
   <div class="alert alert-danger alert-dismissible fade show" role="alert">
     {{ message }}
   </div>
-  {% endif %}
-  {% endfor %}
+  {% endif %} {% endfor %}
 </div>
-{% endif %}
-{% endwith %}
+{% endif %} {% endwith %}
 
 <div id="file_div" data-file-name="{{ file_name }}">
   <div class="card file-upload-card">
@@ -32,15 +31,23 @@
         <ul>
           {% for row in selected_rows %}
           <li>
-            <strong>İşlem Türü:</strong> {{ row.operationType }} <br />
-            <strong>Girdi Değerleri:</strong> {{ row.inputValues }} <br />
+            <strong>İşlem:</strong> {{ row.operationType }} <br />
+            <strong>Girdiler:</strong> {{ row.inputValues }} <br />
             <strong>Sonuç:</strong> {{ row.result }} <br /><br />
+            <strong>Grafik:</strong>
+            <img
+              src=" {{ row.graph }} "
+              style="max-width: 100px; max-height: 100px"
+            />
+            <br /><br />
           </li>
           {% endfor %}
         </ul>
       </div>
       {% endif %}
-      <textarea id="prompt" rows="3" placeholder="Bir şeyler yazın...">{{ prompt }}</textarea>
+      <textarea id="prompt" rows="3" placeholder="Bir şeyler yazın...">
+{{ prompt }}</textarea
+      >
       <div class="mt-3">
         <label for="image-upload">Bir resim yükleyin (isteğe bağlı):</label>
         <input type="file" id="image-upload" accept="image/*" multiple />
@@ -55,12 +62,20 @@
       <div id="spinner" style="display: none; margin-top: 20px">
         <div class="loader"></div>
       </div>
-      <div id="merged-image-container" style="margin-top: 20px;">
-        <img id="merged-image" src="" alt="Birleştirilmiş Görsel" style="max-width: 100%; display: none;" />
+      <div id="merged-image-container" style="margin-top: 20px">
+        <img
+          id="merged-image"
+          src=""
+          alt="Birleştirilmiş Görsel"
+          style="max-width: 100%; display: none"
+        />
       </div>
-      <div id="uploaded-images-container" style="margin-top: 20px;">
+      <div id="uploaded-images-container" style="margin-top: 20px">
         <h5>Yüklenen Görseller:</h5>
-        <div id="uploaded-images" style="display: flex; gap: 10px; flex-wrap: wrap;"></div>
+        <div
+          id="uploaded-images"
+          style="display: flex; gap: 10px; flex-wrap: wrap"
+        ></div>
       </div>
     </div>
   </div>

@@ -161,6 +161,7 @@ def create_tables():
                 user_id INT NOT NULL,
                 question TEXT NOT NULL, 
                 answer TEXT NOT NULL,
+                image_data LONGBLOB DEFAULT NULL,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id)
             )
@@ -261,7 +262,7 @@ def update_table_data(user_id, file_name, updated_data):
     
     try:
         for update in updated_data:
-            if 'delete_column' in update:  # Sütun silme
+            if 'delete_column' in update:
                 _delete_column(file_content, user_id, file_name, update)
             
             elif 'add_column' in update:
@@ -283,7 +284,6 @@ def update_table_data(user_id, file_name, updated_data):
            
 def rollback_change(user_id, file_name, log_id):
     try:
-        # Log kaydını al
         cur = mysql.connection.cursor()
         cur.execute("""
             SELECT action_type, column_name, row_index, old_value
@@ -303,28 +303,27 @@ def rollback_change(user_id, file_name, log_id):
         file_content = get_file_data(user_id, file_name, file_type)
 
         if isinstance(file_content, str):
-            return file_content  # Hata mesajı döndür
+            return file_content 
 
         # İşleme göre geri alma
         if action_type == "update_cell":
-            # Hücreyi eski değere döndür
             if column_name in file_content.columns and 0 <= row_index < len(file_content):
                 file_content.loc[row_index, column_name] = old_value
 
+        # Silinen satırı geri eklemek mümkün değil (log'da satırın tüm değerleri yok)
         elif action_type == "delete_row":
-            # Silinen satırı geri eklemek mümkün değil (log'da satırın tüm değerleri yok)
             return "Satır silme işlemi geri alınamaz."
 
+        # Eklenen satırı sil
         elif action_type == "add_row":
-            # Eklenen satırı sil
             file_content = file_content.drop(index=row_index).reset_index(drop=True)
 
+        # Silinen sütunu geri eklemek mümkün değil (log'da sütunun tüm değerleri yok)
         elif action_type == "delete_column":
-            # Silinen sütunu geri eklemek mümkün değil (log'da sütunun tüm değerleri yok)
             return "Sütun silme işlemi geri alınamaz."
 
+        # Eklenen sütunu sil
         elif action_type == "add_column":
-            # Eklenen sütunu sil
             if column_name in file_content.columns:
                 file_content = file_content.drop(columns=[column_name])
 
@@ -393,17 +392,38 @@ def delete_operation_logs_db(user_id, operation, input_values, result, graph):
         print(f"Operation log silinirken hata oluştu: {str(e)}")
         return False
 
-def log_llama_chat(user_id, question, answer):
+def log_llama_chat(user_id, question, answer, image_data=None):
     try:
         cur = mysql.connection.cursor()
         cur.execute("""
-            INSERT INTO llama_logs (user_id, question, answer)
-            VALUES (%s, %s, %s)
-        """, (user_id, question, answer))
+            INSERT INTO llama_logs (user_id, question, answer, image_data)
+            VALUES (%s, %s, %s, %s)
+        """, (user_id, question, answer, image_data))
         mysql.connection.commit()
         cur.close()
     except Exception as e:
         print(f"Llama sohbeti loglanırken hata oluştu: {str(e)}")
 
+def get_log_llama(user_id):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("""
+            SELECT question, answer, image_data, timestamp
+            FROM llama_logs
+            WHERE user_id = %s
+            ORDER BY timestamp DESC
+        """, (user_id,))
+        logs = cur.fetchall()
+        cur.close()
 
+        formatted_logs = []
+        for log in logs:
+            question, answer, image_data, timestamp = log
+            if image_data:
+                image_data = image_data.decode('utf-8')  # bytes -> string
+            formatted_logs.append((question, answer, image_data, timestamp))
 
+        return formatted_logs
+    except Exception as e:
+        print(f"Ollama logs alınırken hata oluştu: {str(e)}")
+        return []
