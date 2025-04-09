@@ -10,7 +10,7 @@ mysql = MySQL()
 def _read_excel(byte_data):
     try:
         excel_data = pd.read_excel(io.BytesIO(byte_data), engine='openpyxl')
-        excel_data.columns = ['' if 'Unnamed' in col else col for col in excel_data.columns]
+        excel_data.columns = [str(col) if col and 'Unnamed' not in str(col) else '' for col in excel_data.columns]
         return excel_data if not excel_data.empty else None
     except Exception as e:
         print(f"Excel dosyası okuma hatası: {str(e)}")
@@ -19,7 +19,7 @@ def _read_excel(byte_data):
 def _read_csv(byte_data):
     try:
         csv_data = pd.read_csv(io.BytesIO(byte_data))
-        csv_data.columns = ['' if 'Unnamed' in col else col for col in csv_data.columns]
+        csv_data.columns = [str(col) if col and 'Unnamed' not in str(col) else '' for col in csv_data.columns]
         return csv_data if not csv_data.empty else None
     except Exception as e:
         print(f"CSV dosyası okuma hatası: {str(e)}")
