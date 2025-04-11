@@ -1,3 +1,8 @@
+function autoResize(textarea) {
+  textarea.style.height = "auto"; // önce sıfırla
+  textarea.style.height = Math.min(textarea.scrollHeight, 500) + "px"; // max 500px
+}
+
 function sendRequest() {
   const prompt = document.getElementById("prompt").value;
   const imageInput = document.getElementById("image-upload");
@@ -7,6 +12,21 @@ function sendRequest() {
     alert("Lütfen bir prompt girin veya bir resim yükleyin.");
     return;
   }
+
+  // Spinner'ı kontrol et ve butonu devre dışı bırak
+  const spinner = document.getElementById("spinner");
+  const submitButton = document.getElementById("prompt-button");
+
+  // Eğer spinner aktifse butonu devre dışı bırak
+  if (spinner.classList.contains("d-block")) {
+    submitButton.disabled = true;
+    return; // Eğer spinner aktifse işlem yapılmasın
+  }
+
+  // ✅ Chat geçmişini görünür yap
+  const chatHistory = document.getElementById("chat-history");
+  chatHistory.classList.remove("d-none");
+  chatHistory.classList.add("d-block");
 
   // Görselleri göndere tıklayınca göster
   const uploadedImagesContainer = document.getElementById("uploaded-images");
@@ -27,6 +47,11 @@ function sendRequest() {
 
       reader.readAsDataURL(file); // Görseli base64'e dönüştür
     }
+    const uploadedImagesWrapper = document.getElementById(
+      "uploaded-images-container"
+    );
+    uploadedImagesWrapper.classList.remove("d-none");
+    uploadedImagesWrapper.classList.add("d-block");
   }
 
   formData.append("input", prompt);
@@ -36,7 +61,11 @@ function sendRequest() {
     }
   }
 
-  document.getElementById("spinner").style.display = "block";
+  // Spinner'ı göster
+  spinner.classList.remove("d-none"); // spinner'ı göster
+  spinner.classList.add("d-block");
+  submitButton.disabled = true; // butonu devre dışı bırak
+
   document.getElementById("response").innerHTML = "";
 
   fetch("/ollama", {
@@ -45,7 +74,9 @@ function sendRequest() {
   })
     .then((response) => response.json())
     .then((data) => {
-      document.getElementById("spinner").style.display = "none";
+      spinner.classList.remove("d-block"); // spinner'ı gizle
+      spinner.classList.add("d-none");
+      submitButton.disabled = false; // butonu tekrar aktif yap
 
       if (data.success) {
         const chatHistory = document.getElementById("chat-history");
@@ -82,7 +113,9 @@ function sendRequest() {
     })
     .catch((error) => {
       console.error("Hata:", error);
-      document.getElementById("spinner").style.display = "none";
+      spinner.classList.remove("d-block"); // spinner'ı gizle
+      spinner.classList.add("d-none");
+      submitButton.disabled = false; // butonu tekrar aktif yap
       document.getElementById("response").innerHTML =
         "Bir hata oluştu. Lütfen tekrar deneyin.";
     });

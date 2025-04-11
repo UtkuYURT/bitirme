@@ -167,21 +167,22 @@
 @media screen and (max-width: 576px) {
   #sidebar-left,
   #sidebar-right {
-    width: 26vw;
+    width: 50vw;
   }
 
   #bar-i {
-    font-size: 1rem;
+    font-size: 1.3rem;
     line-height: 2rem;
+    margin: 0rem;
   }
 
   #logo-name {
-    font-size: 1rem;
+    font-size: 1.6rem;
   }
 
   .toggle-button i,
   .toggle-button span {
-    font-size: 0.9rem;
+    font-size: 1.3rem;
   }
 
   #sidebar-left .btn-toggle-nav a,
@@ -193,7 +194,7 @@
 
   #sidebar-left.close,
   #sidebar-right.close {
-    width: 12vw;
+    width: 50px;
   }
 
   #sidebar-left.close .btn-toggle-nav a,
@@ -218,26 +219,35 @@
     width: 100%;
     max-width: 500px;
   }
+  #logout-button {
+    padding: 0 !important;
+  }
+  .sidebar-control {
+    padding: 0 !important;
+  }
+  .p-3 {
+    padding: 0.5rem !important;
+  }
 }
 
 @media (min-width: 576px) and (max-width: 768px) {
   #sidebar-left,
   #sidebar-right {
-    width: 25vw;
+    width: 50vw;
   }
 
   #bar-i {
-    font-size: 1rem;
+    font-size: 1.3rem;
     line-height: 2rem;
   }
 
   #logo-name {
-    font-size: 1rem;
+    font-size: 1.6rem !important;
   }
 
   .toggle-button i,
   .toggle-button span {
-    font-size: 0.9rem;
+    font-size: 1.3rem;
   }
 
   #sidebar-left .btn-toggle-nav a,
@@ -249,7 +259,7 @@
 
   #sidebar-left.close,
   #sidebar-right.close {
-    width: 12vw;
+    width: 75px;
   }
 
   #sidebar-left.close .btn-toggle-nav a,
@@ -279,19 +289,21 @@
 @media (min-width: 768px) and (max-width: 1024px) {
   #sidebar-left,
   #sidebar-right {
-    width: 20vw;
+    width: 200px;
   }
 
   #bar-i {
-    font-size: 0.8rem;
+    font-size: 1.1rem;
     line-height: 2rem;
   }
 
   #logo-name {
-    font-size: 1rem;
+    font-size: 1.2rem !important;
   }
 
-  .toggle-button i,
+  .toggle-button i {
+    font-size: 1.1rem;
+  }
   .toggle-button span {
     font-size: 0.8rem;
   }
@@ -334,15 +346,17 @@
   }
 
   #bar-i {
-    font-size: 1.1rem;
+    font-size: 1.3rem;
     line-height: 2rem;
   }
 
   #logo-name {
-    font-size: 1.1rem;
+    font-size: 1.6rem !important;
   }
 
-  .toggle-button i,
+  .toggle-button i {
+    font-size: 1.3rem;
+  }
   .toggle-button span {
     font-size: 1rem;
   }

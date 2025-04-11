@@ -2,7 +2,8 @@
 
 :root {
   --color-dark-light: #31363f;
-  --color-dark-blue: #76abae;
+  --color-dark-blue: #667eea;
+  /* --color-dark-blue: #76abae; */
   --color-dark-white: #eeeeee;
   --color-shadow: #9ba4b5;
 }
@@ -11,123 +12,158 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Montserrat", sans-serif;
+  /* font-family: "Montserrat", sans-serif; */
   list-style: none;
   text-decoration: none;
 }
-
-.form-container {
+/* Layout ayarları */
+.index-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  margin: 0 auto;
+  background: var(--bg-gradient, linear-gradient(to right, #667eea, #764ba2));
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
-.form-container form {
-  padding: 2rem 4rem;
-  box-shadow: 5px 5px 10px rgba(49, 54, 63, 0.4); /* ? renk kodu = var(--color-dark-light) */
-  background: var(--color-dark-white);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  /* width: 45vw; */
-  border-radius: 45px;
+/* Container */
+.container {
+  width: 60% !important;
+  max-width: 500px;
+  padding: 2rem;
+  background-color: var(--form-bg, #fff);
+  border-radius: 20px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
 }
 
-.social-container {
-  margin: 1rem 0;
+/* Başlık */
+h2 {
   text-align: center;
+  margin-bottom: 1.5rem;
+  color: var(--text-color, #333);
 }
 
-.social-container a {
-  border: 2px solid var(--color-dark-light);
-  border-radius: 50%;
-  display: inline-flex;
+/* Sosyal medya ikonları */
+.social-container {
+  display: flex;
+  justify-content: center;
+  gap: 2rem; /* ikonlar birbirine daha yakın */
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.social {
+  display: flex;
   justify-content: center;
   align-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background-color: #f1f1f1;
+  color: #444;
+  font-size: 1.1rem;
+  transition: background-color 0.25s ease, color 0.25s ease, transform 0.2s ease;
   text-decoration: none;
-  margin: 0 5px;
-  height: 50px;
-  width: 50px;
-  color: var(--color-dark-light);
-  font-size: 1.2rem;
 }
 
-.social-container a:hover {
-  border: 2px solid var(--color-dark-blue);
-  transition: 0.2s all ease;
-  color: var(--color-dark-blue);
+.social:hover {
+  background-color: #667eea;
+  color: #fff;
+  transform: scale(1.1); /* hafif büyüme efekti */
 }
 
+/* Form elemanları */
 .form-group {
+  margin-bottom: 1rem;
+}
+
+.form-control {
   width: 100%;
-  padding: 0.4rem 0;
-  font-size: 1.1rem;
-  border-radius: 10px;
+  padding: 0.6rem;
+  border: 1px solid var(--input-border, #ccc);
+  border-radius: 8px;
+  background-color: var(--input-bg, #fff);
+  color: var(--input-text, #000);
 }
 
-#form-check-container {
-  display: flex;
-  justify-content: space-between;
-}
-
-.form-check {
-  width: 50%;
-  vertical-align: middle;
-  display: flex;
-}
-
-.form-check label {
+.button {
   width: 100%;
-  margin: 0 0.2rem;
-  vertical-align: middle;
-  display: flex;
+  padding: 0.7rem;
+  background-color: var(--primary, #667eea);
+  border: none;
+  border-radius: 8px;
+  color: white;
+  font-weight: bold;
+  transition: background-color 0.3s ease;
 }
 
+.button:hover {
+  background-color: var(--primary-hover, #5a67d8);
+}
+
+/* Bağlantılar */
 .text-link {
-  font-size: 1.1rem;
+  color: var(--link-color, #667eea);
   text-decoration: none;
-  text-transform: none;
-  justify-content: end;
-  display: flex;
-  color: var(--color-dark-blue);
+  font-weight: bold;
 }
 
 .text-link:hover {
-  color: var(--color-dark-light);
-  transition: all 0.3s ease-out;
-  cursor: pointer;
+  text-decoration: underline;
 }
 
+/* Orta hizalama */
 .center-div {
   text-align: center;
 }
 
-.center-div span,
-.center-div a {
-  display: inline;
-  vertical-align: middle;
-  font-size: 1.1rem;
+/* Uyarı kutuları */
+.alert {
+  margin-top: 1rem;
 }
 
-.button {
-  font-size: 1rem;
-  text-transform: uppercase;
-  text-align: center;
-  color: #fff;
-  border-radius: 20px;
-  padding: 0.9rem 2.8rem;
-  letter-spacing: 1px;
-  background-color: var(--color-dark-blue);
-  transition: transform 80ms ease-in;
-  border: transparent solid 2px;
+/* Checkbox ve link satırı */
+#form-check-container {
+  display: flex;
+  align-items: center;
 }
 
-.button:hover {
-  background-color: var(--color-dark-light);
-  transition: all 0.3s ease-out;
-  cursor: pointer;
+.form-check-label {
+  margin-left: 0.3rem;
+}
+@media (min-width: 576px) and (max-width: 768px) {
+  body {
+    margin-left: 9vw !important;
+  }
+}
+@media (max-width: 992px) {
+  .container {
+    width: 90% !important;
+    margin: 1rem !important;
+  }
+}
+/* Mobil uyum */
+@media (max-width: 576px) {
+  .container {
+    width: 100% !important;
+    margin: 1rem !important;
+  }
+  .social-container {
+    gap: 1.5rem; /* ikonlar birbirine daha yakın */
+  }
+
+  .form-group {
+    width: 100%;
+  }
+
+  .form-check-label,
+  .text-link {
+    font-size: 0.9rem;
+  }
+  body {
+    margin-left: 50px !important;
+  }
 }
 
 /* ? file operations css  */
@@ -231,9 +267,10 @@ button.btn-remove:hover {
   }
 
   .card.file-upload-card {
-    margin: 0.1rem 0.5rem !important;
+    margin: 1.5rem 0.5rem !important;
     padding: 0.4rem !important;
-    width: 100%;
+    max-width: 400px !important;
+    width: 75vw !important;
   }
 
   button.btn-file {
@@ -270,6 +307,7 @@ button.btn-remove:hover {
   border-radius: 5px;
   cursor: pointer;
   transition: transform 0.2s ease-in;
+  width: 100%;
 }
 
 #prompt-button:hover {
@@ -290,14 +328,47 @@ button.btn-remove:hover {
   display: none;
 }
 
+/* Dikey hareketli 3 nokta */
 .loader {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin: 0 5px;
+  background-color: #007bff;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  animation: spin 1s linear infinite;
-  margin: 0 auto;
+  animation: bounce 1.2s infinite ease-in-out;
+}
+
+/* Nokta hareket animasyonu */
+@keyframes bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px); /* Yukarı hareket */
+  }
+}
+
+/* Her bir nokta için farklı animasyon zamanlamaları */
+.dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
 }
 
 @keyframes spin {
@@ -317,15 +388,51 @@ button.btn-remove:hover {
   margin-bottom: 15px;
   background-color: #f9f9f9;
 }
-
 .user-message {
-  text-align: left;
-  color: #333;
-  margin-bottom: 5px;
+  margin: 1rem 0;
+  max-width: 75%;
+  padding: 10px 15px;
+  border-radius: 20px;
+  font-size: 18px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  position: relative;
+  animation: fadeIn 0.3s ease-in-out;
+  background-color: #007bff;
+  color: #ddd;
+}
+.model-message {
+  max-width: 75%;
+  padding: 10px 15px;
+  border-radius: 20px;
+  font-size: 18px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  position: relative;
+  animation: fadeIn 0.3s ease-in-out;
+  background-color: #5b9a42;
+  margin-left: 25vw;
+  color: #ddd;
+}
+/* input'ı gizle */
+#image-upload {
+  display: none;
 }
 
-.model-message {
-  text-align: right;
-  color: #007bff;
-  margin-bottom: 5px;
+/* ataç simgesi görünümü */
+.upload-icon {
+  cursor: pointer;
+  font-size: 20px;
+  color: #000000;
+  border-radius: 50%;
+  transition: background 0.3s ease;
+}
+.lama-upload {
+  border: 3px solid #007bff;
+  padding: 0.7rem 0.4rem;
+}
+.lama-upload:hover {
+  background-color: #007bff;
+  color: #ffffff;
+  border: 3px solid black;
 }
