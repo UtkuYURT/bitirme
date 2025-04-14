@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify, send_file
+from flask import Flask, render_template,  make_response, request, redirect, url_for, flash, session, jsonify, send_file
 from db import *
 from flask_cors import CORS 
 import pandas as pd
@@ -16,7 +16,8 @@ import base64
 from PIL import Image
 import io
 from googletrans import Translator
-
+from fpdf import FPDF
+from unidecode import unidecode
 app = Flask(__name__)
 CORS(app)
 
@@ -733,5 +734,37 @@ def ollama_logs():
     logs = get_log_llama(user_id)
     return render_template('ollama_logs.html', logs=logs)
 
+#Pdf indirme işlemi
+@app.route('/download_log_pdf')
+def download_log_pdf():
+    operation = unidecode(request.args.get('operation', ''))
+    input_values = unidecode(request.args.get('input_values', ''))
+    result = unidecode(request.args.get('result', ''))
+    graph_path = request.args.get('graph', '')
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    pdf.cell(200, 10, txt=f"Operation: {operation}", ln=True)
+    pdf.cell(200, 10, txt=f"Input Values: {input_values}", ln=True)
+    pdf.cell(200, 10, txt=f"Result: {result}", ln=True)
+
+    if graph_path:
+        full_path = os.path.join('static', graph_path.replace('\\', '/').replace('static/', ''))
+        if os.path.exists(full_path):
+            # Resmi eklemeden önce biraz yer açalım
+            pdf.ln(10)
+            try:
+                pdf.image(full_path, x=10, w=100)
+            except RuntimeError as e:
+                pdf.cell(200, 10, txt="Resim eklenemedi.", ln=True)
+        else:
+            pdf.cell(200, 10, txt="Görsel bulunamadı.", ln=True)
+
+    response = make_response(pdf.output(dest='S').encode('latin1'))
+    response.headers.set('Content-Type', 'application/pdf')
+    response.headers.set('Content-Disposition', 'attachment', filename='log.pdf')
+    return response
 if __name__ == '__main__':
     app.run(debug=True)

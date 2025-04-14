@@ -3,7 +3,6 @@ show_right_sidebar = false %} {% block title %} İşlem Geçmişi {% endblock %}
 block content %}
 
 <!-- sayfa başlangıcı -->
-
 {% with messages = get_flashed_messages(with_categories=true) %} {% if messages
 %}
 <div id="file_div">
@@ -20,6 +19,13 @@ block content %}
 {% endif %} {% endwith %}
 
 <div id="file_div" data-file-name="{{ file_name }}">
+  <!-- Modal -->
+  <div id="myModal" class="modal">
+    <i class="close fa-solid fa-xmark"></i>
+    <img class="modal-content mt-3" id="modal-img" />
+    <div class="modal-caption" id="modal-caption"></div>
+  </div>
+
   <div class="card file-upload-card">
     <div class="card-title">
       <h3 class="text-center fw-bold">Log Kayıtları</h3>
@@ -34,6 +40,7 @@ block content %}
               <th>Girdi Değerleri</th>
               <th>Sonuç</th>
               <th>Grafik</th>
+              <th></th>
               <th></th>
             </tr>
           </thead>
@@ -53,13 +60,28 @@ block content %}
                 <img
                   src="{{ url_for('static', filename=log[4].replace('\\', '/').replace('static/', '')) }}"
                   alt="Grafik"
-                  class="img-fluid"
+                  class="img-fluid open-modal"
+                  data-operation="{{ log[0] }}"
+                  data-input-values="{{ log[1] }}"
+                  data-result="{{ log[2] }}"
+                  data-graph="{{ log[4] }}"
                 />
                 {% else %} Yok {% endif %}
               </td>
               <td>
                 <button type="submit" class="btn btn-danger delete-log-btn">
                   Sil
+                </button>
+              </td>
+              <td>
+                <button
+                  class="btn btn-primary download-pdf-btn"
+                  data-operation="{{ log[0] }}"
+                  data-input-values="{{ log[1] }}"
+                  data-result="{{ log[2] }}"
+                  data-graph="{{ log[4] }}"
+                >
+                  PDF İndir
                 </button>
               </td>
             </tr>

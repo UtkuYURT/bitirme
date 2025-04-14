@@ -287,10 +287,11 @@ button.btn-remove:hover {
 #prompt {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
+  border: 0.25rem solid #ccc;
+  border-radius: 1rem;
   resize: none;
   margin-bottom: 20px;
+  height: 25vh !important;
 }
 
 .prompt-button-div {
@@ -312,7 +313,6 @@ button.btn-remove:hover {
 
 #prompt-button:hover {
   background-color: var(--color-shadow);
-  transform: translateY(-3px);
 }
 
 #response {
@@ -393,7 +393,7 @@ button.btn-remove:hover {
   max-width: 75%;
   padding: 10px 15px;
   border-radius: 20px;
-  font-size: 18px;
+  font-size: 1.4rem;
   line-height: 1.5;
   word-wrap: break-word;
   position: relative;
@@ -411,7 +411,7 @@ button.btn-remove:hover {
   position: relative;
   animation: fadeIn 0.3s ease-in-out;
   background-color: #5b9a42;
-  margin-left: 25vw;
+  margin-left: 10vw;
   color: #ddd;
 }
 /* input'ı gizle */
@@ -428,11 +428,192 @@ button.btn-remove:hover {
   transition: background 0.3s ease;
 }
 .lama-upload {
-  border: 3px solid #007bff;
-  padding: 0.7rem 0.4rem;
+  border: 1px solid #007bff;
+  padding: 0.3rem;
+  font-size: 0.7rem;
+  transition: background 0.3s ease;
+  max-width: 100% !important;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
 }
 .lama-upload:hover {
   background-color: #007bff;
   color: #ffffff;
-  border: 3px solid black;
+  border: 1px solid black;
+  cursor: pointer !important;
+}
+/*Ollama page phone media*/
+
+/*!***********************!*/
+/*!!Operation logs page table css*/
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 1rem !important;
+  overflow: hidden;
+  border: none;
+}
+
+.table td {
+  padding: 12px 15px;
+  text-align: left;
+  font-size: 16px;
+  background-color: rgba(var(--bs-dark-rgb), var(--bs-bg-opacity)) !important;
+  transition: all 0.3s ease;
+}
+
+.table th {
+  background-color: #4caf50 !important;
+  color: white;
+  font-weight: bold;
+  border-top: 4px solid #333;
+}
+
+/* Row Hover Effect */
+.table tbody tr:hover {
+  background-color: #cadfe8 !important;
+  color: white !important;
+  cursor: pointer;
+}
+
+.btn-file a {
+  color: white;
+  text-decoration: none;
+}
+
+/*! To ensure image doesn't overflow */
+.table img {
+  max-width: 100px;
+  border-radius: 1rem;
+  display: block;
+  margin: 0 auto;
+  cursor: zoom-in;
+}
+/* Modal için temel stiller */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center; /* Yatayda ortalama */
+  align-items: center; /* Dikeyde ortalama */
+}
+
+/* Modal içerik */
+.modal-content {
+  max-width: 70%;
+  max-height: 80%;
+  object-fit: contain; /* Görselin boyutlandırılması sırasında en boy oranını korur */
+  display: block;
+  margin: auto; /* Görseli yatayda ortalar */
+  align-self: center; /* Dikeyde ortalamak için ekledik */
+}
+
+/* Kapatma butonu */
+.modal .close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: rgb(255, 0, 0); /* Kırmızı renk */
+  font-size: 3rem; /* Daha küçük font boyutu */
+  background-color: #000000; /* Beyaz arka plan */
+  border: 2px solid #ddd; /* İnce gri kenarlık */
+  border-radius: 50%; /* Yuvarlak buton */
+  font-weight: bold;
+  cursor: pointer;
+  padding: 5px 10px; /* Buton içindeki boşluk */
+  transition: background-color 0.3s ease, color 0.3s ease; /* Hover efekti için geçiş */
+}
+
+.modal .close:hover {
+  background-color: rgb(255, 0, 0); /* Hoverda kırmızı arka plan */
+  color: #000000; /* Yazı beyaz renkte olacak */
+}
+
+/* Modal açıklaması */
+.modal-caption {
+  color: white;
+  font-size: 20px;
+  text-align: center;
+  margin-top: 10px;
+}
+/*!***********************!*/
+/*!!ollama logs modal*/
+.modal-dialog {
+  --bs-modal-width: none !important;
+}
+@media screen and (max-width: 1200px) {
+  .modal-dialog .modal-content {
+    max-width: 90%;
+    max-height: 100%;
+  }
+}
+/*!ollama_oparation_chat style!*/
+.row-list {
+  list-style-type: none;
+  padding-left: 0;
+}
+
+.row-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border: 1px solid #0d0505;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 8px;
+  background-color: #b6b3d3;
+}
+.row-item p {
+  margin-bottom: 0.6rem;
+}
+.row-info {
+  flex: 1;
+}
+
+.row-image {
+  flex-shrink: 0;
+  margin-left: 1.2rem;
+  text-align: center;
+}
+
+.row-image img {
+  max-width: 6rem;
+  max-height: 6rem;
+  border-radius: 4px;
+  display: block;
+  margin: 0 auto;
+}
+
+.image-label {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  color: #555;
+  font-weight: 900;
+}
+/*!Table hücrelerine pointer olunca yazı çıkarma durumu*/
+.tooltip-box {
+  position: absolute;
+  padding: 0.4rem;
+  margin: 1rem;
+  background-color: rgba(24, 7, 110, 0.85);
+  color: #ffffff;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  pointer-events: none;
+  z-index: 9999;
+  white-space: nowrap;
+  transform: translate(10px, 10px);
+  display: none;
 }

@@ -27,24 +27,26 @@ content %}
     <div class="card-body">
       {% if selected_rows %}
       <div class="selected-rows">
-        <h5>Seçili Satırlar:</h5>
-        <ul>
+        <h5 class="fw-bold text-center">Seçili İşlem Satırları:</h5>
+        <ul class="row-list">
           {% for row in selected_rows %}
-          <li>
-            <strong>İşlem:</strong> {{ row.operationType }} <br />
-            <strong>Girdiler:</strong> {{ row.inputValues }} <br />
-            <strong>Sonuç:</strong> {{ row.result }} <br /><br />
-            <strong>Grafik:</strong>
-            <img
-              src=" {{ row.graph }} "
-              style="max-width: 100px; max-height: 100px"
-            />
-            <br /><br />
+          <li class="row-item">
+            <div class="row-info">
+              <p><strong>İşlem:</strong> {{ row.operationType }}</p>
+              <p><strong>Girdiler:</strong> {{ row.inputValues }}</p>
+              <p><strong>Sonuç:</strong> {{ row.result }}</p>
+            </div>
+            <div class="row-image">
+              <p class="image-label">Yüklenen <br/>Görsel</p>
+              <img src="{{ row.graph }}" alt="Grafik" />
+            </div>
           </li>
           {% endfor %}
         </ul>
       </div>
+      </div>
       {% endif %}
+      <h5 class="fw-bold px-3 text-center">Llamaya Gönderilen Prompt</h5>
       <textarea id="prompt" rows="3" placeholder="Bir şeyler yazın...">
 {{ prompt }}</textarea
       >

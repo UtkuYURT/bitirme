@@ -5,15 +5,66 @@ document.addEventListener("DOMContentLoaded", () => {
     row.addEventListener("click", (event) => {
       const clickedCell = event.target;
       const lastCell = row.querySelector("td:last-child");
+      const fourthCell = row.querySelector("td:nth-child(4)");
 
-      // tıklanan hücre son sütunsa seçme
-      if (clickedCell === lastCell || clickedCell.closest("button")) {
+      // Eğer tıklanan hücre son sütun veya 4. sütun ise veya bir buton varsa, seçim engellenir
+      if (
+        clickedCell === lastCell ||
+        clickedCell === fourthCell ||
+        clickedCell.closest("button")
+      ) {
         return;
       }
 
+      // Eğer görsele tıklanırsa modal açılacak, satır seçimi engellenecek
+      if (clickedCell.tagName === "IMG") {
+        event.preventDefault(); // Satır seçimini engelle
+        openModal(clickedCell); // Modal açma fonksiyonu
+        return;
+      }
+
+      // Satır seçme işlemi
       row.classList.toggle("selected");
     });
   });
+
+  // Modal açma fonksiyonu (örnek)
+  function openModal(image) {
+    const modal = document.getElementById("myModal"); // Modal ID'sini buraya yaz
+    const modalImage = modal.querySelector("img"); // Modal içindeki görsel
+    const modalCaption = modal.querySelector(".modal-caption"); // Modal açıklama (isteğe bağlı)
+
+    const inputValues = image
+      .closest("tr")
+      .querySelector("td:nth-child(2)")
+      .innerText.trim();
+    const result = image
+      .closest("tr")
+      .querySelector("td:nth-child(3)")
+      .innerText.trim();
+
+    // Modalda görseli güncelle
+    modalImage.src = image.src;
+    modalCaption.innerHTML = `
+                              <strong>Girdi Değerleri:</strong> ${inputValues} <br>
+                              <strong>Sonuç:</strong> ${result}`; // Görselin açıklaması ve işlem bilgileri
+
+    // Modali göster
+    modal.style.display = "block";
+
+    // Modal kapama
+    const closeBtn = modal.querySelector(".close");
+    closeBtn.onclick = function () {
+      modal.style.display = "none";
+    };
+
+    // Modal dışında bir yere tıklayınca kapama
+    window.onclick = function (event) {
+      if (event.target === modal) {
+        modal.style.display = "none";
+      }
+    };
+  }
 });
 
 function sendSelectedRowsToOllama() {
@@ -121,3 +172,23 @@ function deleteLog(operation, inputValues, result, graph) {
       alert("Bir hata oluştu.");
     });
 }
+//Pdf indirme
+document.addEventListener("DOMContentLoaded", function () {
+  const downloadButtons = document.querySelectorAll(".download-pdf-btn");
+
+  downloadButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const operation = encodeURIComponent(
+        button.getAttribute("data-operation")
+      );
+      const inputValues = encodeURIComponent(
+        button.getAttribute("data-input-values")
+      );
+      const result = encodeURIComponent(button.getAttribute("data-result"));
+      const graph = encodeURIComponent(button.getAttribute("data-graph"));
+
+      const url = `/download_log_pdf?operation=${operation}&input_values=${inputValues}&result=${result}&graph=${graph}`;
+      window.open(url, "_blank");
+    });
+  });
+});

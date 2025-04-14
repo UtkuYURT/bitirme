@@ -60,24 +60,34 @@ block content %}
             <a
               href="{{ url_for('view_file', file_name=file[0]) }}"
               class="text-decoration-none btn-data"
+              title="Dosyayı Düzenle"
             >
               <strong>{{ file[0] }}</strong>
             </a>
           </div>
-          <div class="d-flex gap-2">
-            <a href="{{ url_for('analysis', file_name=file[0]) }}">
+          <div class="d-flex gap-3">
+            <a
+              href="{{ url_for('analysis', file_name=file[0]) }}"
+              title="Dosya Analizi"
+            >
               <button type="submit" class="btn btn-remove">
-                <i class="fa-solid fa-chart-line"></i>
+                <i class="fa-solid fa-chart-line"></i> Dosya Analizi
               </button>
             </a>
-            <form action="/delete_file" method="POST" style="margin: 0">
+            <form
+              action="/delete_file"
+              method="POST"
+              style="margin: 0"
+              title="Dosyayı Sil"
+            >
               <input type="hidden" name="file_name" value="{{ file[0] }}" />
               <button type="submit" class="btn btn-remove">
-                <i class="fa-solid fa-trash"></i>
+                <i class="fa-solid fa-trash"></i> Sil
               </button>
             </form>
           </div>
         </li>
+
         {% endfor %} {% else %}
         <p class="text-center">Henüz yüklediğiniz dosya bulunmamaktadır.</p>
         {% endif %}

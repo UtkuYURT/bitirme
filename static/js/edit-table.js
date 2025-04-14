@@ -244,3 +244,35 @@ document.addEventListener("DOMContentLoaded", function () {
   // Başlangıçta tüm hücrelere dinleyici ekle
   attachCellListeners();
 });
+
+//Pointer durumunda veri seçme işlemi
+document.addEventListener("DOMContentLoaded", function () {
+  // Tooltip kutusunu oluştur
+  const tooltip = document.createElement("div");
+  tooltip.className = "tooltip-box";
+  document.body.appendChild(tooltip);
+
+  // Delay ile tablo yüklendikten sonra td'lere ekle (çünkü içerik dynamic)
+  setTimeout(() => {
+    document.querySelectorAll(".table-responsive td").forEach((td) => {
+      td.classList.add("has-tooltip");
+      td.setAttribute("data-tooltip", "İşlem için veri seçiniz");
+    });
+
+    document.querySelectorAll(".has-tooltip").forEach((el) => {
+      el.addEventListener("mouseenter", (e) => {
+        tooltip.innerText = el.getAttribute("data-tooltip");
+        tooltip.style.display = "block";
+      });
+
+      el.addEventListener("mousemove", (e) => {
+        tooltip.style.top = `${e.pageY}px`;
+        tooltip.style.left = `${e.pageX}px`;
+      });
+
+      el.addEventListener("mouseleave", () => {
+        tooltip.style.display = "none";
+      });
+    });
+  }, 300); // Tablo yüklenme süresi için küçük bir bekleme süresi
+});

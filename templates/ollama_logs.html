@@ -37,15 +37,28 @@ block content %}
           </thead>
           <tbody>
             {% for log in logs %}
-            <tr>
-              <td>{{ log[0] }}</td>
-              <td>{{ log[1] }}</td>
+            <tr
+              class="log-row"
+              data-soru="{{ log[0] }}"
+              data-cevap="{{ log[1] }}"
+              data-foto="{{ log[2] if log[2] else '' }}"
+            >
+              <td>
+                {% if log[0]|length > 75 %} {{ log[0][:75] }}...
+                <span class="text-primary">devamını gör</span>
+                {% else %} {{ log[0] }} {% endif %}
+              </td>
+              <td>
+                {% if log[1]|length > 75 %} {{ log[1][:75] }}...
+                <span class="text-primary">devamını gör</span>
+                {% else %} {{ log[1] }} {% endif %}
+              </td>
               <td>
                 {% if log[2] %}
                 <img
                   src="data:image/png;base64,{{ log[2] }}"
                   alt="Fotoğraf"
-                  style="max-width: 100px; max-height: 100px"
+                  style="max-width: 100px; max-height: 100px; cursor: pointer"
                 />
                 {% else %} - {% endif %}
               </td>
@@ -66,6 +79,35 @@ block content %}
       </div>
     </div>
   </div>
+
+  <!-- Modal -->
+  <div
+    class="modal fade"
+    id="logModal"
+    tabindex="-1"
+    aria-labelledby="logModalLabel"
+    aria-hidden="true"
+  >
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" id="logModalLabel">Log Detayı</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Kapat"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>Soru:</strong> <span id="modalSoru"></span></p>
+          <p><strong>Cevap:</strong> <span id="modalCevap"></span></p>
+          <div id="modalFotoDiv" class="text-center"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="{{ url_for('static', filename='js/ollama-logs.js') }}"></script>
 
   {% endblock %}
 </div>

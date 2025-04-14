@@ -98,18 +98,20 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 });
 
-// Sidebar dışında bir yere tıklayınca sidebar'ı kapat
 document.addEventListener("click", function (e) {
-  const sidebar = document.querySelector("[id^='sidebar-']");
-  const sidebarControl = document.querySelector(".sidebar-control");
+  // Sadece ekran genişliği 768px'den küçükse çalışsın
+  if (window.innerWidth < 768) {
+    const sidebar = document.querySelector("[id^='sidebar-']");
+    const sidebarControl = document.querySelector(".sidebar-control");
 
-  if (
-    sidebar &&
-    !sidebar.contains(e.target) &&
-    !sidebarControl.contains(e.target)
-  ) {
-    sidebar.classList.add("close");
-    updateBodyMarginForSidebar();
+    if (
+      sidebar &&
+      !sidebar.contains(e.target) &&
+      !sidebarControl.contains(e.target)
+    ) {
+      sidebar.classList.add("close");
+      updateBodyMarginForSidebar();
+    }
   }
 });
 

@@ -36,21 +36,39 @@ content %}
         rows="3"
         placeholder="Bir şeyler yazın..."
       ></textarea>
-      <div class="row">
-        <div class="mt-3 col-12 col-lg-7">
-          <label for="image-upload"
-            >Bir resim yükleyin (isteğe bağlı):
-            <span class="lama-upload">
+      <div class="row align-items-center">
+        <div class="lama-upload col-12 col-lg-7 mt-3">
+          <label for="image-upload" class="form-label w-100">
+            Resim Seçiniz (isteğe bağlı):
+            <span class="d-inline-block mt-2">
               <i class="fa-solid fa-folder-open upload-icon"></i>
-              Dosya Seç</span
-            >
+              Dosya Seç
+            </span>
           </label>
-          <input type="file" id="image-upload" accept="image/*" multiple />
+          <input
+            type="file"
+            id="image-upload"
+            accept="image/*"
+            multiple
+            class="form-control"
+          />
         </div>
-        <div class="prompt-button-div col-12 col-lg-5 mt-1">
-          <button onclick="sendRequest()" id="prompt-button">Gönder</button>
+
+        <div
+          class="col-12 col-lg-5 mt-3 d-flex justify-content-lg-end justify-content-center"
+        >
+          <div class="prompt-button-div w-100 w-lg-auto">
+            <button
+              onclick="sendRequest()"
+              id="prompt-button"
+              class="btn btn-primary w-100 w-lg-auto"
+            >
+              Gönder
+            </button>
+          </div>
         </div>
       </div>
+
       <div id="response" class="d-none"></div>
       <div id="spinner" class="loader">
         <div class="dot"></div>
