@@ -30,12 +30,14 @@ content %}
       {% endif %}
     </div>
     <div class="card-body">
-      {% if content %}
-      <div class="table-responsive">
-        <!-- HTML Tablosu render ediliyor -->
-        {{ content|safe }}
-      </div>
+      {% if content %} 
+        {% if is_text %}
+        <!-- Metin dosyaları için metin alanı -->
+        <textarea id="editable-content" class="form-control" rows="20" data-file-name="{{ file_name }}">{{ content }}</textarea>
       {% else %}
+      <!-- Tablo render ediliyor -->
+      <div class="table-responsive">{{ content|safe }}</div>
+      {% endif %} {% else %}
       <p class="text-center text-danger">Dosya içeriği bulunamadı.</p>
       {% endif %}
       <div class="text-center mt-2">

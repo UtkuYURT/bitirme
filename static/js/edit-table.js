@@ -4,6 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
     .getElementById("file_div")
     ?.getAttribute("data-file-name");
   const table = document.getElementById("editable-table");
+  const textArea = document.getElementById("editable-content");
   const addRowButton = document.getElementById("add-row-button");
   const deleteRowButton = document.getElementById("delete-row-button");
   const addColumnButton = document.getElementById("add-column-button");
@@ -31,6 +32,24 @@ document.addEventListener("DOMContentLoaded", function () {
       .catch((error) => console.error("AJAX hatası:", error));
   }
 
+  function updateTextContent() {
+    const content = textArea.value.trim();
+
+    if (!content) {
+      console.warn("Boş içerik gönderilmeye çalışıldı.");
+      return;
+    }
+
+    const data = [
+      {
+        update_text: true,
+        content: content,
+      },
+    ];
+
+    updateDatabase(data);
+  }
+
   function updateCell(cell) {
     const rowIndex = cell.getAttribute("data-row");
     const columnName = cell.getAttribute("data-column");
@@ -55,11 +74,34 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Hücrelere düzenleme dinleyicisi ekle
   function attachCellListeners() {
+    if (!table) {
+      return;
+    }
+
     const editableCells = table.querySelectorAll(".editable-cell");
+
+    if (editableCells.length === 0) {
+      console.error("[DEBUG] Düzenlenebilir hücre bulunamadı");
+      return;
+    }
+
     editableCells.forEach((cell) => {
       cell.addEventListener("blur", function () {
         updateCell(cell);
       });
+    });
+  }
+
+  function attachTextAreaListener() {
+    if (!textArea) {
+      console.warn(
+        "Metin alanı bulunamadı. attachTextAreaListener çağrılmadı."
+      );
+      return;
+    }
+
+    textArea.addEventListener("blur", function () {
+      updateTextContent();
     });
   }
 
@@ -242,6 +284,7 @@ document.addEventListener("DOMContentLoaded", function () {
     deleteColumnButton.addEventListener("click", deleteColumn);
 
   // Başlangıçta tüm hücrelere dinleyici ekle
+  attachTextAreaListener();
   attachCellListeners();
 });
 

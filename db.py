@@ -3,6 +3,12 @@ from datetime import datetime
 import MySQLdb
 import pandas as pd
 import io
+import os
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from docx import Document
 
 mysql = MySQL()
 
@@ -60,20 +66,90 @@ def _update_cell(file_content, user_id, file_name, update):
         file_content.at[row_index, column_name] = new_value
         log_change(user_id, file_name, "update_cell", column_name=column_name, row_index=row_index, old_value=old_value, new_value=new_value)
 
-def _save_file_content(user_id, file_name, file_content, file_type):
-    output = io.BytesIO()
-    if file_type == 'xlsx':
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
-            file_content.to_excel(writer, index=False)
-    elif file_type == 'csv':
-        file_content.to_csv(output, index=False, encoding='utf-8')
+def _update_text(file_content, user_id, file_name, update):
+    new_content = update['content']
+    try:
+        # print(f"[DEBUG] Güncellenen içerik (önceki): {file_content}")
+        if isinstance(file_content, bytes):
+            updated_content = new_content
+        else: 
+            updated_content = new_content.encode('utf-8')
+        # print(f"[DEBUG] Güncellenen içerik (sonraki): {updated_content}")
+        return updated_content
+    except Exception as e:
+        print(f"Metin dosyası güncellenirken hata oluştu: {str(e)}")
+        return file_content
 
-    file_byte_data = output.getvalue()
-    cur = mysql.connection.cursor()
-    cur.execute("UPDATE user_files SET file_content = %s WHERE user_id = %s AND file_name = %s",
-                (file_byte_data, user_id, file_name))
-    mysql.connection.commit()
-    cur.close()
+def create_pdf_from_text(text):
+    output = io.BytesIO()
+    c = canvas.Canvas(output, pagesize=letter)
+
+    font_path = os.path.join("static", "fonts", "DejaVuSans.ttf")
+    pdfmetrics.registerFont(TTFont("DejaVuSans", font_path))
+    c.setFont("DejaVuSans", 12)
+
+    y = 750
+    for line in text.splitlines():
+        c.drawString(72, y, line)
+        y -= 15
+        if y < 72:
+            c.showPage()
+            c.setFont("DejaVuSans", 12)
+            y = 750
+
+    c.save()
+    return output.getvalue()
+
+def create_docx_from_text(text):
+    doc = Document()
+    for line in text.splitlines():
+        doc.add_paragraph(line)
+
+    output = io.BytesIO()
+    doc.save(output)
+    return output.getvalue()
+
+def _save_file_content(user_id, file_name, file_content, file_type):
+    try:
+        output = None
+
+        if file_type == 'xlsx':
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                file_content.to_excel(writer, index=False)
+            file_byte_data = output.getvalue()
+        elif file_type == 'csv':
+            output = io.BytesIO()
+            file_content.to_csv(output, index=False, encoding='utf-8')
+            file_byte_data = output.getvalue()
+        elif file_type == 'pdf':
+            if isinstance(file_content, str):
+                print("[DEBUG] PDF metin olarak geldi, yeni PDF oluşturulacak.")
+                file_byte_data = create_pdf_from_text(file_content)
+            else:
+                return "PDF içeriği metin olarak bekleniyor."
+        elif file_type == 'docx':
+            print("[DEBUG] DOCX dosyası işleniyor")
+            if isinstance(file_content, str):
+                file_byte_data = create_docx_from_text(file_content)
+                print(f"[DEBUG] Yeni DOCX oluşturuldu. Uzunluk: {len(file_byte_data)}")
+            else:
+                print("[HATA] DOCX için yalnızca metin içeriği bekleniyor.")
+                return "DOCX içeriği metin olarak bekleniyor."
+        else:
+            file_byte_data = file_content
+
+        cur = mysql.connection.cursor()
+        cur.execute(
+            "UPDATE user_files SET file_content = %s WHERE user_id = %s AND file_name = %s",
+            (file_byte_data, user_id, file_name)
+        )
+        mysql.connection.commit()
+        cur.close()
+
+        print(f"Dosya başarıyla güncellendi: {file_name}")
+    except Exception as e:
+        print(f"Dosya kaydedilirken hata oluştu: {str(e)}")
 
 # ! Veritabanı İşlemleri
 def init_db(app):
@@ -219,13 +295,15 @@ def get_file_data(user_id, file_name, file_type=None):
     if not file_data or not file_data[0]:
         print("Dosya içeriği bulunamadı veya boş.")
         return None
-    
-    byte_data = file_data[0]
 
+    byte_data = file_data[0]
+    
     if file_type == 'xlsx':
         return _read_excel(byte_data)
     elif file_type == 'csv':
         return _read_csv(byte_data)
+    elif file_type in ['txt', 'pdf', 'docx']:
+        return byte_data
     else:
         print(f"Desteklenmeyen dosya türü: {file_type}")
         return None
@@ -264,19 +342,28 @@ def update_table_data(user_id, file_name, updated_data):
         for update in updated_data:
             if 'delete_column' in update:
                 _delete_column(file_content, user_id, file_name, update)
+                new_file_content = file_content
             
             elif 'add_column' in update:
                 _add_column(file_content, user_id, file_name, update)
+                new_file_content = file_content
                 
             elif 'delete_row' in update:
                 _delete_row(file_content, user_id, file_name, update)
+                new_file_content = file_content
                 
             elif 'is_new_row' in update:
                 _add_row(file_content, user_id, file_name, update)
+                new_file_content = file_content
+
             elif 'row_index' in update and 'column_name' in update:
                 _update_cell(file_content, user_id, file_name, update)
+                new_file_content = file_content
+                
+            elif 'update_text' in update:
+                new_file_content = _update_text(file_content, user_id, file_name, update)
 
-        _save_file_content(user_id, file_name, file_content, file_type)
+        _save_file_content(user_id, file_name, new_file_content, file_type)
         return True
     except Exception as e:
         print(f"Güncelleme hatası: {str(e)}")

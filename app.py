@@ -18,6 +18,9 @@ import io
 from googletrans import Translator
 from fpdf import FPDF
 from unidecode import unidecode
+import pdfplumber
+from docx import Document
+
 app = Flask(__name__)
 CORS(app)
 
@@ -43,7 +46,7 @@ def get_file_extension(file_name):
     return os.path.splitext(file_name)[1].lower().strip('.')
 
 def allowed_file(filename):
-    ALLOWED_EXTENSIONS = {'csv', 'xlsx'}
+    ALLOWED_EXTENSIONS = {'csv', 'xlsx', 'pdf', 'txt', 'docx'}
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def handle_file_upload(user_id, file):
@@ -241,6 +244,26 @@ def encode_graph_to_base64(graph_path):
         print(f"[DEBUG] Grafik dosyası okunamadı: {str(e)}")
         return None
 
+def extract_text_from_pdf(file_content):
+    try:
+        with pdfplumber.open(io.BytesIO(file_content)) as pdf:
+            text = ""
+            for page in pdf.pages:
+                text += page.extract_text() + "\n"
+        return text.strip()
+    except Exception as e:
+        print(f"PDF metni çıkarılamadı: {str(e)}")
+        return "PDF metni çıkarılamadı veya dosya bozuk."
+    
+def extract_text_from_docx(file_content):
+    try:
+        doc = Document(io.BytesIO(file_content))
+        text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+        return text.strip()
+    except Exception as e:
+        print(f"DOCX metni çıkarılamadı: {str(e)}")
+        return None
+
 # ! Routes
 @app.route('/')
 def home():
@@ -333,16 +356,36 @@ def view_file(file_name):
         try:
             file_content = get_file_data(user_id, file_name, file_type=file_extension)
 
-            if file_content is None or not isinstance(file_content, pd.DataFrame):
-                flash("Dosya bulunamadı veya içerik mevcut değil", "file_danger")
-                return redirect(url_for('file_operations'))
+            if file_extension in ['csv', 'xlsx']:
+                # CSV ve Excel dosyaları için tablo oluştur
+                if not isinstance(file_content, pd.DataFrame) or file_content.empty:
+                    flash("Dosya boş veya geçersiz", "file_danger")
+                    return redirect(url_for('file_operations'))
 
-            if file_content.empty:
-                flash("Dosya boş", "file_danger")
-                return redirect(url_for('file_operations'))
+                table_html = generate_table_html(file_content, editable=True)
+                return render_template('main_page.html', file_name=file_name, content=table_html, is_text=False)
 
-            table_html = generate_table_html(file_content, editable=True)
-            return render_template('main_page.html', file_name=file_name, content=table_html)
+            elif file_extension in ['txt', 'pdf', 'docx']:
+                if file_extension == 'txt':
+                    try:
+                        text_content = file_content.decode('utf-8')  
+                    except Exception as e:
+                        print(f"TXT dosyası okunamadı: {str(e)}")
+                        text_content = "TXT dosyası okunamadı."
+                elif file_extension == 'pdf':
+                    text_content = extract_text_from_pdf(file_content) 
+                elif file_extension == 'docx':
+                    text_content = extract_text_from_docx(file_content) 
+
+                if not text_content or text_content.strip() == "":
+                    flash("Dosya içeriği boş veya okunamadı.", "file_danger")
+                    return redirect(url_for('file_operations'))
+ 
+                return render_template('main_page.html', file_name=file_name, content=text_content, is_text=True)
+
+            else:
+                flash("Desteklenmeyen dosya türü", "file_danger")
+                return redirect(url_for('file_operations'))
 
         except Exception as e:
             print(f"Hata oluştu: {e}")
@@ -766,5 +809,6 @@ def download_log_pdf():
     response.headers.set('Content-Type', 'application/pdf')
     response.headers.set('Content-Disposition', 'attachment', filename='log.pdf')
     return response
+
 if __name__ == '__main__':
     app.run(debug=True)
