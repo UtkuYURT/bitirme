@@ -69,13 +69,11 @@ def _update_cell(file_content, user_id, file_name, update):
 def _update_text(file_content, user_id, file_name, update):
     new_content = update['content']
     try:
-        # print(f"[DEBUG] Güncellenen içerik (önceki): {file_content}")
         if isinstance(file_content, bytes):
             updated_content = new_content
         else: 
             updated_content = new_content.encode('utf-8')
-        # print(f"[DEBUG] Güncellenen içerik (sonraki): {updated_content}")
-        log_change(user_id, file_name, "update_text", old_value=file_content, new_value=new_content)
+        # log_change(user_id, file_name, "update_text", old_value=file_content, new_value=new_content)
         return updated_content
     except Exception as e:
         print(f"Metin dosyası güncellenirken hata oluştu: {str(e)}")
@@ -110,9 +108,53 @@ def _create_docx_from_text(text):
     doc.save(output)
     return output.getvalue()
 
+def _read_text_from_file(user_id, file_name, file_type):
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT file_content FROM user_files WHERE user_id = %s AND file_name = %s",
+                    (user_id, file_name))
+        result = cur.fetchone()
+        cur.close()
+
+        if not result:
+            return None
+
+        file_data = result[0]
+
+        if file_type == 'txt':
+            return file_data.decode('utf-8')
+        elif file_type == 'pdf':
+            from PyPDF2 import PdfReader
+            reader = PdfReader(io.BytesIO(file_data))
+            return "\n".join([page.extract_text() or "" for page in reader.pages])
+        elif file_type == 'docx':
+            from docx import Document
+            doc = Document(io.BytesIO(file_data))
+            return "\n".join([para.text for para in doc.paragraphs])
+        else:
+            return None
+    except Exception as e:
+        print(f"Dosya okuma hatası: {str(e)}")
+        return None
+
 def _save_file_content(user_id, file_name, file_content, file_type):
     try:
         output = None
+        old_text = None
+
+        if file_type in ["pdf", "docx", "txt"]:
+            old_text = _read_text_from_file(user_id, file_name, file_type)
+
+        new_text = file_content if isinstance(file_content, str) else None
+
+        if old_text is not None and new_text is not None:
+            log_change(
+                user_id=user_id,
+                file_name=file_name,
+                action_type="update_text",
+                old_value=old_text,
+                new_value=new_text
+            )
 
         if file_type == 'xlsx':
             output = io.BytesIO()
@@ -358,7 +400,6 @@ def update_table_data(user_id, file_name, updated_data):
                 new_file_content = file_content
                 
             elif 'update_text' in update:
-                old_content = file_content.decode('utf-8') if isinstance(file_content, bytes) else file_content
                 new_file_content = _update_text(file_content, user_id, file_name, update)
 
         _save_file_content(user_id, file_name, new_file_content, file_type)
@@ -385,10 +426,16 @@ def rollback_change(user_id, file_name, log_id):
         # Dosya içeriğini al
         file_type = file_name.rsplit('.', 1)[1].lower()
 
-        if file_type == 'txt' and action_type == 'update_text':
+        if action_type == 'update_text':
             if not old_value:
-                return "Metin dosyasının eski hali logda bulunamadı."
-            file_byte_data = old_value.encode("utf-8")
+                return "Dosyanın eski hali logda bulunamadı."
+
+            if file_type == "txt":
+                file_byte_data = old_value.encode("utf-8")
+            elif file_type == "pdf":
+                file_byte_data = _create_pdf_from_text(old_value)
+            elif file_type == "docx":
+                file_byte_data = _create_docx_from_text(old_value)
         else:
             file_content = get_file_data(user_id, file_name, file_type)
             if isinstance(file_content, str):
