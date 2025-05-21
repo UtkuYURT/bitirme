@@ -75,12 +75,13 @@ def _update_text(file_content, user_id, file_name, update):
         else: 
             updated_content = new_content.encode('utf-8')
         # print(f"[DEBUG] Güncellenen içerik (sonraki): {updated_content}")
+        log_change(user_id, file_name, "update_text", old_value=file_content, new_value=new_content)
         return updated_content
     except Exception as e:
         print(f"Metin dosyası güncellenirken hata oluştu: {str(e)}")
         return file_content
 
-def create_pdf_from_text(text):
+def _create_pdf_from_text(text):
     output = io.BytesIO()
     c = canvas.Canvas(output, pagesize=letter)
 
@@ -100,7 +101,7 @@ def create_pdf_from_text(text):
     c.save()
     return output.getvalue()
 
-def create_docx_from_text(text):
+def _create_docx_from_text(text):
     doc = Document()
     for line in text.splitlines():
         doc.add_paragraph(line)
@@ -124,17 +125,13 @@ def _save_file_content(user_id, file_name, file_content, file_type):
             file_byte_data = output.getvalue()
         elif file_type == 'pdf':
             if isinstance(file_content, str):
-                print("[DEBUG] PDF metin olarak geldi, yeni PDF oluşturulacak.")
-                file_byte_data = create_pdf_from_text(file_content)
+                file_byte_data = _create_pdf_from_text(file_content)
             else:
                 return "PDF içeriği metin olarak bekleniyor."
         elif file_type == 'docx':
-            print("[DEBUG] DOCX dosyası işleniyor")
             if isinstance(file_content, str):
-                file_byte_data = create_docx_from_text(file_content)
-                print(f"[DEBUG] Yeni DOCX oluşturuldu. Uzunluk: {len(file_byte_data)}")
+                file_byte_data = _create_docx_from_text(file_content)
             else:
-                print("[HATA] DOCX için yalnızca metin içeriği bekleniyor.")
                 return "DOCX içeriği metin olarak bekleniyor."
         else:
             file_byte_data = file_content
@@ -361,12 +358,12 @@ def update_table_data(user_id, file_name, updated_data):
                 new_file_content = file_content
                 
             elif 'update_text' in update:
+                old_content = file_content.decode('utf-8') if isinstance(file_content, bytes) else file_content
                 new_file_content = _update_text(file_content, user_id, file_name, update)
 
         _save_file_content(user_id, file_name, new_file_content, file_type)
         return True
     except Exception as e:
-        print(f"Güncelleme hatası: {str(e)}")
         return f"Güncelleme hatası: {str(e)}"    
            
 def rollback_change(user_id, file_name, log_id):
@@ -387,42 +384,47 @@ def rollback_change(user_id, file_name, log_id):
 
         # Dosya içeriğini al
         file_type = file_name.rsplit('.', 1)[1].lower()
-        file_content = get_file_data(user_id, file_name, file_type)
 
-        if isinstance(file_content, str):
-            return file_content 
+        if file_type == 'txt' and action_type == 'update_text':
+            if not old_value:
+                return "Metin dosyasının eski hali logda bulunamadı."
+            file_byte_data = old_value.encode("utf-8")
+        else:
+            file_content = get_file_data(user_id, file_name, file_type)
+            if isinstance(file_content, str):
+                return file_content 
 
-        # İşleme göre geri alma
-        if action_type == "update_cell":
-            if column_name in file_content.columns and 0 <= row_index < len(file_content):
-                file_content.loc[row_index, column_name] = old_value
+            # İşleme göre geri alma
+            if action_type == "update_cell":
+                if column_name in file_content.columns and 0 <= row_index < len(file_content):
+                    file_content.loc[row_index, column_name] = old_value
 
-        # Silinen satırı geri eklemek mümkün değil (log'da satırın tüm değerleri yok)
-        elif action_type == "delete_row":
-            return "Satır silme işlemi geri alınamaz."
+            # Silinen satırı geri eklemek mümkün değil (log'da satırın tüm değerleri yok)
+            elif action_type == "delete_row":
+                return "Satır silme işlemi geri alınamaz."
 
-        # Eklenen satırı sil
-        elif action_type == "add_row":
-            file_content = file_content.drop(index=row_index).reset_index(drop=True)
+            # Eklenen satırı sil
+            elif action_type == "add_row":
+                file_content = file_content.drop(index=row_index).reset_index(drop=True)
 
-        # Silinen sütunu geri eklemek mümkün değil (log'da sütunun tüm değerleri yok)
-        elif action_type == "delete_column":
-            return "Sütun silme işlemi geri alınamaz."
+            # Silinen sütunu geri eklemek mümkün değil (log'da sütunun tüm değerleri yok)
+            elif action_type == "delete_column":
+                return "Sütun silme işlemi geri alınamaz."
 
-        # Eklenen sütunu sil
-        elif action_type == "add_column":
-            if column_name in file_content.columns:
-                file_content = file_content.drop(columns=[column_name])
+            # Eklenen sütunu sil
+            elif action_type == "add_column":
+                if column_name in file_content.columns:
+                    file_content = file_content.drop(columns=[column_name])
 
-        # Güncellenmiş dosya içeriğini kaydet
-        output = io.BytesIO()
-        if file_type == 'xlsx':
-            with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                file_content.to_excel(writer, index=False)
-        elif file_type == 'csv':
-            file_content.to_csv(output, index=False, encoding='utf-8')
+            # Güncellenmiş dosya içeriğini kaydet
+            output = io.BytesIO()
+            if file_type == 'xlsx':
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    file_content.to_excel(writer, index=False)
+            elif file_type == 'csv':
+                file_content.to_csv(output, index=False, encoding='utf-8')
 
-        file_byte_data = output.getvalue()
+            file_byte_data = output.getvalue()
 
         cur = mysql.connection.cursor()
         cur.execute("UPDATE user_files SET file_content = %s WHERE user_id = %s AND file_name = %s",

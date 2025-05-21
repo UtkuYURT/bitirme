@@ -418,13 +418,36 @@ def analysis(file_name):
     if request.method == 'GET':
         file_extension = get_file_extension(file_name)
         file_content = get_file_data(user_id, file_name, file_type=file_extension)
-        if file_content is not None and isinstance(file_content, pd.DataFrame):
-            if not file_content.empty:
-                table_html = generate_table_html(file_content, editable=False)
-                return render_template('analysis.html', file_name=file_name, content=table_html)
-            flash("Dosya boş", "file_danger")
+
+        if file_extension in ['csv', 'xlsx']:
+            if file_content is not None and isinstance(file_content, pd.DataFrame):
+                if not file_content.empty:
+                    table_html = generate_table_html(file_content, editable=False)
+                    return render_template('analysis.html', file_name=file_name, content=table_html)
+                flash("Dosya boş", "file_danger")
+            else:
+                flash("Dosya bulunamadı veya içerik mevcut değil", "file_danger")
+
+        elif file_extension in ['txt', 'pdf', 'docx']:
+            if file_extension == 'txt':
+                try:
+                    text_content = file_content.decode('utf-8')
+                except Exception as e:
+                    print(f"TXT dosyası okunamadı: {str(e)}")
+                    text_content = "TXT dosyası okunamadı."
+            elif file_extension == 'pdf':
+                text_content = extract_text_from_pdf(file_content)
+            elif file_extension == 'docx':
+                text_content = extract_text_from_docx(file_content)
+
+            if text_content and text_content.strip():
+                return render_template('analysis.html', file_name=file_name, content=text_content, file_extension=file_extension)
+            else:
+                flash("Dosya içeriği boş veya okunamadı.", "file_danger")
+
         else:
-            flash("Dosya bulunamadı veya içerik mevcut değil", "file_danger")
+            flash("Desteklenmeyen dosya türü", "file_danger")
+
         return redirect(url_for('file_operations'))
         
 OPERATIONS = {
@@ -777,7 +800,6 @@ def ollama_logs():
     logs = get_log_llama(user_id)
     return render_template('ollama_logs.html', logs=logs)
 
-#Pdf indirme işlemi
 @app.route('/download_log_pdf')
 def download_log_pdf():
     operation = unidecode(request.args.get('operation', ''))

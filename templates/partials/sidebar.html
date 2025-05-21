@@ -43,6 +43,24 @@
       </button>
       <div class="collapse" id="collapse3">
         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+          {% if file_extension in ['pdf', 'docx', 'txt'] %}
+          <li>
+            <a href="{{ url_for('mathematical_operations') }}" class="rounded"
+              >Metin Analizi</a
+            >
+          </li>
+          <li>
+            <a href="{{ url_for('mathematical_operations') }}" class="rounded"
+              >Anahtar Kelime Çıkarımı</a
+            >
+          </li>
+          <li>
+            <a href="{{ url_for('mathematical_operations') }}" class="rounded"
+              >Özet Oluşturma</a
+            >
+          </li>
+          {% else %}
+          <p class="text-white">File Extension: {{ file_extension }}</p>
           <li>
             <a
               href="{{ url_for('mathematical_operations') }}"
@@ -50,60 +68,80 @@
               id="calculate-average"
               >Aritmetik Ortalama</a
             >
+          </li>
+          <li>
             <a
               href="{{ url_for('mathematical_operations') }}"
               class="rounded"
               id="calculate-geometric"
               >Geometrik Ortalama</a
             >
+          </li>
+          <li>
             <a
               href="{{ url_for('mathematical_operations') }}"
               class="rounded"
               id="calculate-harmonic"
               >Harmonik Ortalama</a
             >
+          </li>
+          <li>
             <a
               href="{{ url_for('mathematical_operations') }}"
               class="rounded"
               id="calculate-median"
               >Medyan</a
             >
+          </li>
+          <li>
             <a
               href="{{ url_for('mathematical_operations') }}"
               class="rounded"
               id="calculate-correlation"
               >Korelasyon</a
             >
+          </li>
+          <li>
             <a
               href="{{ url_for('mathematical_operations') }}"
               class="rounded"
               id="calculate-std-dev"
               >Standart Sapma</a
             >
+          </li>
+          <li>
             <a
               href="{{ url_for('mathematical_operations') }}"
               class="rounded"
               id="calculate-variance"
               >Varyans</a
             >
+          </li>
+          <li>
             <a
               href="{{ url_for('mathematical_operations') }}"
               class="rounded"
               id="calculate-z-test"
               >Z Testi</a
             >
+          </li>
+          <li>
             <a
               href="{{ url_for('mathematical_operations') }}"
               class="rounded"
               id="calculate-t-test"
               >T Testi</a
             >
+          </li>
+          <li>
             <a
               href="{{ url_for('mathematical_operations') }}"
               class="rounded"
               id="calculate-regression"
               >Regresyon Testi</a
             >
+          </li>
+          <li>
             <a
               href="{{ url_for('mathematical_operations') }}"
               class="rounded"
@@ -111,6 +149,7 @@
               >Frekans</a
             >
           </li>
+          {% endif %}
         </ul>
       </div>
       {% endif %}
