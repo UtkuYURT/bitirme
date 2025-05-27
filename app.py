@@ -783,9 +783,6 @@ def textual_operations():
         
         plot_img = None
         if operation == 'frequency' and isinstance(result, dict):
-            print(f"[DEBUG] Frekans işlemi algılandı")
-            if isinstance(result, dict) and result:
-                print(f"[DEBUG] Frekans işlemi algılandı")
             if result:
                 plot_img_path = frequency_plot(result, user_id)
                 print(f"[DEBUG] Grafik dosya yolu: {plot_img_path}")
@@ -800,9 +797,8 @@ def textual_operations():
         session['textual_operation'] = selected_operation['title']
         session['plot_img_path'] = plot_img_path
 
-        print(f"[DEBUG] Session'a kaydedilen plot_img: {plot_img is not None}")
 
-        log_operation(is_user_logged_in(), operation, text_content, result)
+        log_operation(is_user_logged_in(), operation, text_content, result, plot_img_path)
         return redirect(url_for('textual_operations'))
     else:
         result = session.get('textual_result', None)
