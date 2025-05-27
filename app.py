@@ -20,6 +20,7 @@ from fpdf import FPDF
 from unidecode import unidecode
 import pdfplumber
 from docx import Document
+import string
 
 app = Flask(__name__)
 CORS(app)
@@ -213,26 +214,36 @@ def process_selected_rows(selected_rows):
     images = []
     prompt = []
 
+    is_textual = selected_rows[0].get('operationType') == 'main_information'
+
     for row in selected_rows:
         operation_type = row.get('operationType')
         input_values = row.get('inputValues')
         result = row.get('result')
-        graph = row.get('graph')
 
-        # Görseli base64 formatına dönüştür
-        graph_base64 = encode_graph_to_base64(graph)
-        if graph_base64:
-            images.append(graph_base64)
+        if not is_textual:
+            graph = row.get('graph')
+            # Görseli base64 formatına dönüştür
+            graph_base64 = encode_graph_to_base64(graph)
+            if graph_base64:
+                images.append(graph_base64)
 
-        # Prompt oluştur
-        prompt.append(
-            f"{input_values} değerleri ile {operation_type} işlemi yaptım ve sonuç olarak {result} sonucunu aldım. "
-            f"Bu işleme ait grafik görselde yer alıyor."
-        )
+            # Sayısal işlem için prompt
+            prompt.append(
+                f"{input_values} değerleri ile {operation_type} işlemi yaptım ve sonuç olarak {result} sonucunu aldım. "
+                f"Bu işleme ait grafik görselde yer alıyor."
+            )
+        else:
+            prompt.append(
+                f"Metin girdisi: \"{input_values}\""
+            )
 
-    prompt.append(f"Lütfen bu {len(selected_rows)} işlemi hem sayısal hem grafiklerdeki görsel bilgiler açısından karşılaştırır mısın?")
-    for i, image in enumerate(images):
-        prompt.append(f"Görsel {i + 1}: {image}")
+    if is_textual:
+        prompt.append(f"Lütfen bu metni içerik ve anlam açısından açıklar mısın?")
+    else:
+        prompt.append(f"Lütfen bu {len(selected_rows)} işlemi hem sayısal hem grafiklerdeki görsel bilgiler açısından karşılaştırır mısın?")
+        for i, image in enumerate(images):
+            prompt.append(f"Görsel {i + 1}: {image}")
 
     return images, prompt
 
@@ -579,7 +590,7 @@ def get_main_idea_with_ollama(text):
 
         translated_response = translate_response_if_needed(full_response, detected_language)
 
-        return "Ana Düşünce: " + translated_response.strip()
+        return translated_response.strip()
     
     except Exception as e:
         return f"Hata oluştu: {str(e)}"
@@ -600,7 +611,7 @@ def get_keyword_with_ollama(text):
 
         translated_response = translate_response_if_needed(full_response, detected_language)
 
-        return "Ana Düşünce: " + translated_response.strip()
+        return translated_response.strip()
     
     except Exception as e:
         return f"Hata oluştu: {str(e)}"
@@ -621,13 +632,107 @@ def get_summarize_with_ollama(text):
 
         translated_response = translate_response_if_needed(full_response, detected_language)
 
-        return "Ana Düşünce: " + translated_response.strip()
+        return translated_response.strip()
+    
+    except Exception as e:
+        return f"Hata oluştu: {str(e)}"
+
+def get_discourse_with_ollama(text):
+    try:
+        translated_prompt, detected_language = translate_prompt_if_needed(
+            f"{text} \n Can you do a discourse analysis of this paragraph?"
+        )
+
+        payload = {
+            "model": "llava", 
+            "prompt": translated_prompt,
+            "stream": True
+        }
+
+        full_response = call_ollama_api(payload)
+
+        translated_response = translate_response_if_needed(full_response, detected_language)
+
+        return translated_response.strip()
+    
+    except Exception as e:
+        return f"Hata oluştu: {str(e)}"
+
+def get_cleaned_frequency_analysis(text):
+    try:
+        words = text.lower().split()
+
+        cleaned_words = [
+            word.strip(string.punctuation)
+            for word in words
+            if word.strip(string.punctuation)
+        ]
+
+        frequency = {word: cleaned_words.count(word) for word in set(cleaned_words)}
+        return frequency
+    except Exception as e:
+        return f"Hata oluştu: {str(e)}"
+
+def frequency_plot(frequency_dict, user_id=None):
+    try:
+        if not frequency_dict:
+            return None
+
+        sorted_items = sorted(frequency_dict.items(), key=lambda x: x[1], reverse=True)[:10]
+        words = [item[0] for item in sorted_items]
+        counts = [item[1] for item in sorted_items]
+
+        fig, ax = plt.subplots(figsize=(12, 6))
+        bars = ax.bar(words, counts, color='skyblue', alpha=0.8)
+        ax.set_title("Kelime Frekans Grafiği", fontsize=16, fontweight='bold')
+        ax.set_xlabel("Kelimeler", fontsize=12)
+        ax.set_ylabel("Frekans", fontsize=12)
+        plt.xticks(rotation=45, ha='right')
+        for bar, count in zip(bars, counts):
+            ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1,
+                    str(count), ha='center', va='bottom', fontweight='bold')
+        plt.tight_layout()
+
+        # Kullanıcıya özel klasör
+        if user_id:
+            graph_dir = os.path.join('static', 'graphs', str(user_id))
+        else:
+            graph_dir = os.path.join('static', 'graphs')
+        os.makedirs(graph_dir, exist_ok=True)
+        filename = f"frequency_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
+        filepath = os.path.join(graph_dir, filename)
+        plt.savefig(filepath, dpi=300, bbox_inches='tight')
+        plt.close(fig)
+        # Sadece 'graphs/user_id/...' kısmını döndür
+        rel_path = os.path.join('graphs', str(user_id), filename) if user_id else os.path.join('graphs', filename)
+        return rel_path.replace("\\", "/")
+    except Exception as e:
+        print(f"[DEBUG] Grafik oluşturma hatası: {str(e)}")
+        return None
+
+def get_emotion_analysis_with_ollama(text):
+    try:
+        translated_prompt, detected_language = translate_prompt_if_needed(
+            f"{text} \n Can you analyze the emotional tone and sentiment of this text? Please identify the dominant emotions (positive, negative, neutral) and explain the emotional elements you detect."
+        )
+
+        payload = {
+            "model": "llava", 
+            "prompt": translated_prompt,
+            "stream": True
+        }
+
+        full_response = call_ollama_api(payload)
+
+        translated_response = translate_response_if_needed(full_response, detected_language)
+
+        return translated_response.strip()
     
     except Exception as e:
         return f"Hata oluştu: {str(e)}"
 
 TEXT_OPERATIONS = {
-    'analysis': {
+    'main_information': {
         'function': get_main_idea_with_ollama,
         'title': 'Metnin Ana Düşüncesi'
     },
@@ -639,6 +744,18 @@ TEXT_OPERATIONS = {
         'function': get_summarize_with_ollama,
         'title': 'Metin Özeti'
     },
+    'discourse': {
+        'function': get_discourse_with_ollama,
+        'title': 'Metnin Söylem Analizi'
+    },
+    'frequency': {
+        'function': get_cleaned_frequency_analysis,
+        'title': 'Metnin Frekans Analizi'
+    },
+    'emotion': {
+        'function': get_emotion_analysis_with_ollama,
+        'title': 'Metnin Duygu Analizi'
+    },
 }
 
 @app.route('/textual_operations', methods=['GET', 'POST'])
@@ -646,6 +763,7 @@ def textual_operations():
     if request.method == 'POST':
         text_content = request.form.get("text_content")
         operation = request.form.get("operation")
+        user_id = is_user_logged_in()
 
         if not text_content or not operation:
             flash("Eksik veri gönderildi.", "file_danger")
@@ -662,17 +780,36 @@ def textual_operations():
         except Exception as e:
             flash(f"İşlem hatası: {str(e)}", "file_danger")
             return redirect(url_for('textual_operations'))
+        
+        plot_img = None
+        if operation == 'frequency' and isinstance(result, dict):
+            print(f"[DEBUG] Frekans işlemi algılandı")
+            if isinstance(result, dict) and result:
+                print(f"[DEBUG] Frekans işlemi algılandı")
+            if result:
+                plot_img_path = frequency_plot(result, user_id)
+                print(f"[DEBUG] Grafik dosya yolu: {plot_img_path}")
+            else:
+                flash("Hiç kelime bulunamadı.", "file_danger")
+                return redirect(url_for('textual_operations'))
+        else:
+            plot_img_path = None
 
         session['textual_result'] = result
         session['textual_input'] = text_content
         session['textual_operation'] = selected_operation['title']
+        session['plot_img_path'] = plot_img_path
 
+        print(f"[DEBUG] Session'a kaydedilen plot_img: {plot_img is not None}")
+
+        log_operation(is_user_logged_in(), operation, text_content, result)
         return redirect(url_for('textual_operations'))
     else:
         result = session.get('textual_result', None)
         text_content = session.get('textual_input', '')
         operation_title = session.get('textual_operation', '')
-        return render_template('textual_operations.html', result=result, text_content=text_content, operation_title=operation_title)
+        plot_img_path = session.get('plot_img_path', None)
+        return render_template('textual_operations.html', result=result, text_content=text_content, operation_title=operation_title, plot_img_path=plot_img_path)
 
 @app.route('/plot')
 def plot():
@@ -746,7 +883,7 @@ def delete_operation_log():
     result = data.get('result')
     graph = data.get('graph')
     
-    success = delete_operation_logs_db(user_id, operation, input_values, result, graph)
+    success = delete_operation_logs_db(user_id, operation, input_values, result)
 
     if graph:
             graph_path = os.path.join(os.getcwd(), graph.lstrip('/'))
@@ -769,7 +906,7 @@ def ollama_chat():
 def ollama_operation_chat():
     if request.method == 'POST':
         selected_rows = request.json.get('selectedRows', [])
-        if len(selected_rows) < 2:
+        if len(selected_rows) < 1:
             return jsonify({"success": False, "error": "Lütfen en az iki satır seçin!"}), 400
         
         session['selected_rows'] = selected_rows

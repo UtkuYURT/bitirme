@@ -36,10 +36,23 @@ show_right_sidebar = false %} {% block title %}Metinsel İşlemler{% endblock %}
     <div class="card-body">
       {% if result is not none %}
       <h5 class="fw-bold text-center">Sonuç</h5>
-      <p>{{ result if result.strip() else "Sonuç üretilemedi." }}</p>
+
+      <p>{{ result if result else "Sonuç üretilemedi." }}</p>
       {% else %}
       <p>Henüz bir işlem yapılmadı.</p>
+      {% endif %} {% if plot_img_path %}
+      <div class="mb-3">
+        <div class="text-center">
+          <img
+            src="{{ url_for('static', filename=plot_img_path) }}"
+            alt="Frekans Grafiği"
+            class="img-fluid"
+            style="max-width: 100%; height: auto"
+          />
+        </div>
+      </div>
       {% endif %}
+
       <div class="text-center mt-2">
         <button class="btn btn-file" type="submit">
           <a href="{{ url_for('file_operations') }}"

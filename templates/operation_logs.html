@@ -31,8 +31,16 @@ block content %}
       <h3 class="text-center fw-bold">Log Kayıtları</h3>
     </div>
     <div class="card-body">
+      <div class="text-center mb-4">
+        <button class="btn btn-file" type="button" id="mathematical-logs-btn">
+          Matematiksel Analiz Logları
+        </button>
+        <button class="btn btn-file" type="button" id="textual-logs-btn">
+          Metinsel Analiz Logları
+        </button>
+      </div>
       {% if logs %}
-      <div class="table-responsive">
+      <div class="table-responsive" id="logs-table" style="display: none">
         <table class="table table-bordered table-hover table-operation-logs">
           <thead>
             <tr>

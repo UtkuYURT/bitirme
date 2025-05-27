@@ -517,10 +517,10 @@ def get_operations_logs(user_id):
         print(f"Operation logs alınırken hata oluştu: {str(e)}")
         return []
 
-def delete_operation_logs_db(user_id, operation, input_values, result, graph):
+def delete_operation_logs_db(user_id, operation, input_values, result):
     try:
         cur = mysql.connection.cursor()
-        cur.execute("DELETE FROM operation_logs WHERE user_id = %s AND operation = %s AND input_values = %s AND result = %s AND graph_path = %s", (user_id, operation, input_values, result, graph))
+        cur.execute("DELETE FROM operation_logs WHERE user_id = %s AND operation = %s AND input_values = %s AND result = %s", (user_id, operation, input_values, result))
         mysql.connection.commit()
         cur.close()
         return True

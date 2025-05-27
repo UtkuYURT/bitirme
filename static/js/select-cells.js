@@ -271,21 +271,33 @@ function calculate_text(operation) {
     }),
   })
     .then((response) => {
+      if (loadingIndicator) {
+        loadingIndicator.style.display = "none";
+      }
+
       if (response.redirected) {
         window.location.href = response.url;
       } else {
-        console.warn("Yönlendirme yapılmadı.");
+        // Normal redirect yapılmadıysa manuel yönlendirme
+        window.location.href = "/textual_operations";
       }
     })
     .catch((error) => {
+      if (loadingIndicator) {
+        loadingIndicator.style.display = "none";
+      }
       console.error("[DEBUG] Veri gönderilirken hata oluştu:", error);
+      alert("Bir hata oluştu. Lütfen tekrar deneyin.");
     });
 }
 
 const textOperations = [
-  { id: "text-analysis", operation: "analysis" },
+  { id: "text-analysis", operation: "main_information" },
   { id: "text-keyword-extraction", operation: "keyword_extraction" },
   { id: "text-summary", operation: "summary" },
+  { id: "text-discourse", operation: "discourse" },
+  { id: "text-frequency", operation: "frequency" },
+  { id: "text-emotion", operation: "emotion" },
 ];
 
 textOperations.forEach(({ id, operation }) => {
