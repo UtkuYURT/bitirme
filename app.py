@@ -562,6 +562,118 @@ def mathematical_operations():
         title = session.get('operation_title', 'Matematiksel İşlem')
         return render_template('mathematical_operations.html', result=result, selected_values=selected_values, operation=operation, title=title)
 
+# !metin sonuçlarını alma
+def get_main_idea_with_ollama(text):
+    try:
+        translated_prompt, detected_language = translate_prompt_if_needed(
+            f"{text} \n what is the main information in this text? Can you explain it in one sentence?"
+        )
+
+        payload = {
+            "model": "llava", 
+            "prompt": translated_prompt,
+            "stream": True
+        }
+
+        full_response = call_ollama_api(payload)
+
+        translated_response = translate_response_if_needed(full_response, detected_language)
+
+        return "Ana Düşünce: " + translated_response.strip()
+    
+    except Exception as e:
+        return f"Hata oluştu: {str(e)}"
+
+def get_keyword_with_ollama(text):
+    try:
+        translated_prompt, detected_language = translate_prompt_if_needed(
+            f"{text} \n what are the key words in this text? Five keywords are enough"
+        )
+
+        payload = {
+            "model": "llava", 
+            "prompt": translated_prompt,
+            "stream": True
+        }
+
+        full_response = call_ollama_api(payload)
+
+        translated_response = translate_response_if_needed(full_response, detected_language)
+
+        return "Ana Düşünce: " + translated_response.strip()
+    
+    except Exception as e:
+        return f"Hata oluştu: {str(e)}"
+
+def get_summarize_with_ollama(text):
+    try:
+        translated_prompt, detected_language = translate_prompt_if_needed(
+            f"{text} \n Can you summarize this text? Three sentences are enough"
+        )
+
+        payload = {
+            "model": "llava", 
+            "prompt": translated_prompt,
+            "stream": True
+        }
+
+        full_response = call_ollama_api(payload)
+
+        translated_response = translate_response_if_needed(full_response, detected_language)
+
+        return "Ana Düşünce: " + translated_response.strip()
+    
+    except Exception as e:
+        return f"Hata oluştu: {str(e)}"
+
+TEXT_OPERATIONS = {
+    'analysis': {
+        'function': get_main_idea_with_ollama,
+        'title': 'Metnin Ana Düşüncesi'
+    },
+    'keyword_extraction': {
+        'function': get_keyword_with_ollama,
+        'title': 'Anahtar Kelime Çıkarımı'
+    },
+    'summary': {
+        'function': get_summarize_with_ollama,
+        'title': 'Metin Özeti'
+    },
+}
+
+@app.route('/textual_operations', methods=['GET', 'POST'])
+def textual_operations():
+    if request.method == 'POST':
+        text_content = request.form.get("text_content")
+        operation = request.form.get("operation")
+
+        if not text_content or not operation:
+            flash("Eksik veri gönderildi.", "file_danger")
+            return redirect(url_for('textual_operations'))
+
+        selected_operation = TEXT_OPERATIONS.get(operation)
+
+        if not selected_operation:
+            flash("Geçersiz işlem seçildi.", "file_danger")
+            return redirect(url_for('textual_operations'))
+
+        try:
+            result = selected_operation['function'](text_content)
+        except Exception as e:
+            flash(f"İşlem hatası: {str(e)}", "file_danger")
+            return redirect(url_for('textual_operations'))
+
+        session['textual_result'] = result
+        session['textual_input'] = text_content
+        session['textual_operation'] = selected_operation['title']
+
+        return redirect(url_for('textual_operations'))
+    else:
+        result = session.get('textual_result', None)
+        text_content = session.get('textual_input', '')
+        operation_title = session.get('textual_operation', '')
+        return render_template('textual_operations.html', result=result, text_content=text_content, operation_title=operation_title)
+
 @app.route('/plot')
 def plot():
     selected_values = session.get('selected_values', [])

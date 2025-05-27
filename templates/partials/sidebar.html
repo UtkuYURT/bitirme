@@ -45,22 +45,30 @@
         <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
           {% if file_extension in ['pdf', 'docx', 'txt'] %}
           <li>
-            <a href="{{ url_for('mathematical_operations') }}" class="rounded"
-              >Metin Analizi</a
+            <a
+              href="{{ url_for('textual_operations') }}"
+              class="rounded"
+              id="text-analysis"
+              >Metnin Ana Düşüncesi</a
             >
           </li>
           <li>
-            <a href="{{ url_for('mathematical_operations') }}" class="rounded"
+            <a
+              href="{{ url_for('textual_operations') }}"
+              class="rounded"
+              id="text-keyword-extraction"
               >Anahtar Kelime Çıkarımı</a
             >
           </li>
           <li>
-            <a href="{{ url_for('mathematical_operations') }}" class="rounded"
+            <a
+              href="{{ url_for('textual_operations') }}"
+              class="rounded"
+              id="text-summary"
               >Özet Oluşturma</a
             >
           </li>
           {% else %}
-          <p class="text-white">File Extension: {{ file_extension }}</p>
           <li>
             <a
               href="{{ url_for('mathematical_operations') }}"

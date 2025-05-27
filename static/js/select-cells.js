@@ -113,8 +113,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
   // Temizleme butonu için kod
   const clearButton = document.getElementById("clear-button");
+  if (!clearButton) {
+    return;
+  }
   clearButton.addEventListener("click", function (e) {
-    e.preventDefault(); // Link tıklamasını engelle
+    e.preventDefault();
     selectedCells.forEach((cell) => {
       cell.classList.remove("selected");
     });
@@ -236,4 +239,60 @@ document.addEventListener("DOMContentLoaded", function () {
         calculate(operation);
       });
   });
+});
+
+function calculate_text(operation) {
+  const textContentElement = document.getElementById("text");
+
+  if (!textContentElement) {
+    alert("Metin içeriği bulunamadı.");
+    return;
+  }
+
+  const textContent = textContentElement.textContent.trim();
+  // console.log("[DEBUG] textContent:", textContent);
+
+  if (!textContent) {
+    alert("Metin içeriği boş.");
+    return;
+  }
+
+  const loadingIndicator = document.getElementById("loading-indicator");
+  loadingIndicator.style.display = "block";
+
+  fetch("/textual_operations", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams({
+      text_content: textContent,
+      operation: operation,
+    }),
+  })
+    .then((response) => {
+      if (response.redirected) {
+        window.location.href = response.url;
+      } else {
+        console.warn("Yönlendirme yapılmadı.");
+      }
+    })
+    .catch((error) => {
+      console.error("[DEBUG] Veri gönderilirken hata oluştu:", error);
+    });
+}
+
+const textOperations = [
+  { id: "text-analysis", operation: "analysis" },
+  { id: "text-keyword-extraction", operation: "keyword_extraction" },
+  { id: "text-summary", operation: "summary" },
+];
+
+textOperations.forEach(({ id, operation }) => {
+  const button = document.getElementById(id);
+  if (button)
+    button.addEventListener("click", (e) => {
+      e.preventDefault();
+      calculate_text(operation);
+    });
 });

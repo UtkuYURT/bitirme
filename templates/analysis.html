@@ -31,11 +31,11 @@ content %}
     </div>
     <div class="card-body">
       {% if content %} {% if content.startswith('<table') %}
-      <!-- HTML Tablosu render ediliyor -->
+      <!-- html tablosu render ediliyor -->
       <div class="table-responsive">{{ content|safe }}</div>
       {% else %}
       <!-- Metin içeriği render ediliyor -->
-      <pre class="text-content">{{ content }}</pre>
+      <pre class="text-content" id="text">{{ content }}</pre>
       {% endif %} {% else %}
       <p class="text-center text-danger">Dosya içeriği bulunamadı.</p>
       {% endif %}
@@ -45,15 +45,24 @@ content %}
             >Dosya İşlemlerine Geri Dön</a
           >
         </button>
+        {% if content %} {% if content.startswith('<table') %}
         <button class="btn btn-file" type="submit" id="clear-button">
           <a href="#">Seçimleri Temizle</a>
         </button>
+        {% else %} {% endif %} {% endif %}
       </div>
     </div>
   </div>
 
+  <!-- TODO: Yapılacak -->
+  <div
+    id="loading-indicator"
+    style="display: none; text-align: center; margin-top: 20px"
+  >
+    <strong>Yükleniyor...</strong>
+  </div>
+
   <script src="{{ url_for('static', filename='js/select-cells.js') }}"></script>
-  <script src="{{ url_for('static', filename='js/edit-table.js') }}"></script>
 
   {% endblock %}
 </div>

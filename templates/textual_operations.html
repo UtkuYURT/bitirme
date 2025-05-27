@@ -1,0 +1,55 @@
+{% extends "partials/base.html" %} {% set show_sidebar = true %} {% set
+show_right_sidebar = false %} {% block title %}Metinsel İşlemler{% endblock %}
+{% block content %}
+
+<!-- sayfa başlangıcı -->
+
+{% with messages = get_flashed_messages(with_categories=true) %} {% if messages
+%}
+<div id="file_div">
+  {% for category, message in messages %} {% if category == 'file_success' %}
+  <div class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ message }}
+  </div>
+  {% elif category == 'file_danger' %}
+  <div class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ message }}
+  </div>
+  {% endif %} {% endfor %}
+</div>
+{% endif %} {% endwith %}
+
+<div id="file_div">
+  <div class="card file-upload-card">
+    <div class="card-title">
+      {% if operation_title and text_content %}
+      <h3 class="text-center fw-bold">{{ operation_title }}</h3>
+      <p class="text-center text-secondary">
+        Metin:
+        <em
+          >{{ text_content[:125] }}{% if text_content|length > 125 %}...{% endif
+          %}</em
+        >
+      </p>
+      {% endif %}
+    </div>
+    <div class="card-body">
+      {% if result is not none %}
+      <h5 class="fw-bold text-center">Sonuç</h5>
+      <p>{{ result if result.strip() else "Sonuç üretilemedi." }}</p>
+      {% else %}
+      <p>Henüz bir işlem yapılmadı.</p>
+      {% endif %}
+      <div class="text-center mt-2">
+        <button class="btn btn-file" type="submit">
+          <a href="{{ url_for('file_operations') }}"
+            >Dosya İşlemlerine Geri Dön</a
+          >
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+{% endblock %}
