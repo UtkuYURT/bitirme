@@ -107,6 +107,11 @@ function sendSelectedRowsToOllama() {
       result,
     };
 
+    if (operationType == "frequency") {
+      const graphImg = row.querySelector("td:nth-child(4) img");
+      rowData.graph = graphImg ? graphImg.src.trim() : null;
+    }
+
     if (!isTextual) {
       const graphImg = row.querySelector("td:nth-child(4) img");
       rowData.graph = graphImg ? graphImg.src.trim() : null;
