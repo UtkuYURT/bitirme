@@ -73,7 +73,6 @@ function sendSelectedRowsToOllama() {
     ".table-operation-logs tbody tr.selected"
   );
 
-  // Aktif log türünü belirle (görünür olan satırların operationType'ına bakarak)
   const visibleRow = Array.from(
     document.querySelectorAll(".table-operation-logs tbody tr")
   ).find((row) => row.style.display !== "none");
@@ -87,7 +86,6 @@ function sendSelectedRowsToOllama() {
     "emotion",
   ].includes(operationType);
 
-  // Seçili satır sayısı kontrolü
   if ((isTextual && rows.length < 1) || (!isTextual && rows.length < 2)) {
     alert(
       isTextual
@@ -98,19 +96,15 @@ function sendSelectedRowsToOllama() {
   }
 
   rows.forEach((row) => {
-    const operationType = row.querySelector("td:nth-child(1)").innerText.trim();
-    const inputValues = row.querySelector("td:nth-child(2)").innerText.trim();
-    const result = row.querySelector("td:nth-child(3)").innerText.trim();
+    const operationType = row.dataset.operation || "";
+    const inputValues = row.dataset.inputValues || "";
+    const result = row.dataset.result || "";
+
     const rowData = {
       operationType,
       inputValues,
       result,
     };
-
-    if (operationType == "frequency") {
-      const graphImg = row.querySelector("td:nth-child(4) img");
-      rowData.graph = graphImg ? graphImg.src.trim() : null;
-    }
 
     if (!isTextual) {
       const graphImg = row.querySelector("td:nth-child(4) img");
@@ -118,7 +112,7 @@ function sendSelectedRowsToOllama() {
     }
 
     selectedRows.push(rowData);
-    console.log("Seçilen Satır:", selectedRows);
+    console.log("Seçilen Satır:", rowData);
   });
 
   fetch("/ollama_operation_chat", {
@@ -278,6 +272,32 @@ document.addEventListener("DOMContentLoaded", function () {
 
       const url = `/download_log_pdf?operation=${operation}&input_values=${inputValues}&result=${result}&graph=${graph}`;
       window.open(url, "_blank");
+    });
+  });
+});
+document.addEventListener("DOMContentLoaded", function () {
+  document.querySelectorAll(".log-detail-btn").forEach(function (el) {
+    el.addEventListener("click", function () {
+      const operation = this.dataset.operation;
+      const input = this.dataset.input;
+      const result = this.dataset.result;
+      const graph = this.dataset.graph;
+
+      document.getElementById("modalOperation").textContent = operation;
+      document.getElementById("modalInputs").textContent = input;
+      document.getElementById("modalResult").textContent = result;
+
+      const modalGraphDiv = document.getElementById("modalGraph");
+      modalGraphDiv.innerHTML = "";
+
+      if (graph) {
+        const img = document.createElement("img");
+        img.src = `/static/${graph.replace(/\\/g, "/").replace("static/", "")}`;
+        img.style.maxWidth = "100%";
+        modalGraphDiv.appendChild(img);
+      }
+
+      new bootstrap.Modal(document.getElementById("logDetailModal")).show();
     });
   });
 });

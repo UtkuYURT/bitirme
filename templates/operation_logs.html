@@ -61,8 +61,32 @@ block content %}
               data-graph="{{ log[4] }}"
             >
               <td>{{ log[0] }}</td>
-              <td>{{ log[1] }}</td>
-              <td>{{ log[2] }}</td>
+              <td>
+                {% if log[1]|length > 50 %} {{ log[1][:50] }}...
+                <span
+                  class="text-primary log-detail-btn"
+                  style="cursor: pointer"
+                  data-operation="{{ log[0] }}"
+                  data-input="{{ log[1] }}"
+                  data-result="{{ log[2] }}"
+                  data-graph="{{ log[4] }}"
+                  >devamını gör</span
+                >
+                {% else %} {{ log[1] }} {% endif %}
+              </td>
+              <td>
+                {% if log[2]|length > 50 %} {{ log[2][:50] }}...
+                <span
+                  class="text-primary log-detail-btn"
+                  style="cursor: pointer"
+                  data-operation="{{ log[0] }}"
+                  data-input="{{ log[1] }}"
+                  data-result="{{ log[2] }}"
+                  data-graph="{{ log[4] }}"
+                  >devamını gör</span
+                >
+                {% else %} {{ log[2] }} {% endif %}
+              </td>
               <td>
                 {% if log[4] %}
                 <img
@@ -113,6 +137,30 @@ block content %}
             >Dosya İşlemlerine Geri Dön</a
           >
         </button>
+      </div>
+    </div>
+  </div>
+  <!-- Modal -->
+  <div class="modal fade" id="logDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Log Detayı</h5>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="modal"
+            aria-label="Kapat"
+          ></button>
+        </div>
+        <div class="modal-body">
+          <p><strong>İşlem Türü:</strong> <span id="modalOperation"></span></p>
+          <p>
+            <strong>Girdi Değerleri:</strong> <span id="modalInputs"></span>
+          </p>
+          <p><strong>Sonuç:</strong> <span id="modalResult"></span></p>
+          <div id="modalGraph" class="text-center"></div>
+        </div>
       </div>
     </div>
   </div>

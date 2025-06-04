@@ -13,24 +13,22 @@ function sendRequest() {
     return;
   }
 
-  // Spinner'ı kontrol et ve butonu devre dışı bırak
   const spinner = document.getElementById("spinner");
+  const loadingIndicator = document.getElementById("loading-indicator"); // 🔁 Loader elementini al
   const submitButton = document.getElementById("prompt-button");
 
   // Eğer spinner aktifse butonu devre dışı bırak
   if (spinner.classList.contains("d-block")) {
     submitButton.disabled = true;
-    return; // Eğer spinner aktifse işlem yapılmasın
+    return;
   }
 
-  // ✅ Chat geçmişini görünür yap
   const chatHistory = document.getElementById("chat-history");
   chatHistory.classList.remove("d-none");
   chatHistory.classList.add("d-block");
 
-  // Görselleri göndere tıklayınca göster
   const uploadedImagesContainer = document.getElementById("uploaded-images");
-  uploadedImagesContainer.innerHTML = ""; // Önceki görselleri temizle
+  uploadedImagesContainer.innerHTML = "";
   if (imageInput.files.length) {
     for (let i = 0; i < imageInput.files.length; i++) {
       const file = imageInput.files[i];
@@ -38,15 +36,16 @@ function sendRequest() {
 
       reader.onload = function (e) {
         const img = document.createElement("img");
-        img.src = e.target.result; // base64 görsel
+        img.src = e.target.result;
         img.style.maxWidth = "150px";
         img.style.maxHeight = "150px";
         img.style.border = "1px solid #ccc";
         uploadedImagesContainer.appendChild(img);
       };
 
-      reader.readAsDataURL(file); // Görseli base64'e dönüştür
+      reader.readAsDataURL(file);
     }
+
     const uploadedImagesWrapper = document.getElementById(
       "uploaded-images-container"
     );
@@ -61,10 +60,12 @@ function sendRequest() {
     }
   }
 
-  // Spinner'ı göster
-  spinner.classList.remove("d-none"); // spinner'ı göster
+  // ✅ Spinner ve loading-indicator'ı göster
+  spinner.classList.remove("d-none");
   spinner.classList.add("d-block");
-  submitButton.disabled = true; // butonu devre dışı bırak
+
+  loadingIndicator.style.display = "block"; // 👈 loader görünür olsun
+  submitButton.disabled = true;
 
   document.getElementById("response").innerHTML = "";
 
@@ -74,33 +75,31 @@ function sendRequest() {
   })
     .then((response) => response.json())
     .then((data) => {
-      spinner.classList.remove("d-block"); // spinner'ı gizle
+      spinner.classList.remove("d-block");
       spinner.classList.add("d-none");
-      submitButton.disabled = false; // butonu tekrar aktif yap
+
+      loadingIndicator.style.display = "none"; // 👈 loader gizlensin
+      submitButton.disabled = false;
 
       if (data.success) {
         const chatHistory = document.getElementById("chat-history");
 
-        // Kullanıcı mesajı
         const userMessage = document.createElement("div");
         userMessage.className = "user-message";
         userMessage.innerText = `Kullanıcı: ${prompt}`;
         chatHistory.appendChild(userMessage);
 
-        // Model yanıtını
         const modelMessage = document.createElement("div");
         modelMessage.className = "model-message";
         modelMessage.innerText = `Model: ${data.response}`;
         chatHistory.appendChild(modelMessage);
 
-        // Birleştirilmiş görsel
         if (data.merged_image_url) {
           const mergedImage = document.getElementById("merged-image");
           mergedImage.src = data.merged_image_url;
           mergedImage.style.display = "block";
         }
 
-        // Sohbet geçmişini kaydır
         chatHistory.scrollTop = chatHistory.scrollHeight;
 
         document.getElementById("response").innerHTML = "";
@@ -113,9 +112,11 @@ function sendRequest() {
     })
     .catch((error) => {
       console.error("Hata:", error);
-      spinner.classList.remove("d-block"); // spinner'ı gizle
+      spinner.classList.remove("d-block");
       spinner.classList.add("d-none");
-      submitButton.disabled = false; // butonu tekrar aktif yap
+
+      loadingIndicator.style.display = "none"; // 👈 loader gizlensin
+      submitButton.disabled = false;
       document.getElementById("response").innerHTML =
         "Bir hata oluştu. Lütfen tekrar deneyin.";
     });
