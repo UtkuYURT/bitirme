@@ -1047,6 +1047,36 @@ def ollama_logs():
 
 @app.route('/download_log_pdf')
 def download_log_pdf():
+    operation = request.args.get('operation', '')
+    input_values = request.args.get('input_values', '')
+    result = request.args.get('result', '')
+    graph_path = request.args.get('graph', '')
+
+    pdf = FPDF()
+    pdf.add_page()
+
+    # Türkçe karakterler için font
+    font_path = os.path.join('static', 'fonts', 'DejaVuSans.ttf')
+    pdf.add_font('DejaVu', '', font_path, uni=True)
+    pdf.set_font('DejaVu', '', 12)
+
+    # Satır atlamaları otomatik işlenir
+    pdf.multi_cell(0, 10, txt=f"Operation:\n{operation}")
+    pdf.ln(2)
+    pdf.multi_cell(0, 10, txt=f"Input Values:\n{input_values}")
+    pdf.ln(2)
+    pdf.multi_cell(0, 10, txt=f"Result:\n{result}")
+    pdf.ln(5)
+
+    # Grafik varsa ekle
+    if graph_path and os.path.exists(graph_path):
+        pdf.image(graph_path, x=10, w=190)  # genişliği sayfaya göre ayarla
+
+    # PDF’i geçici dosyaya kaydet
+    output_path = "output_log.pdf"
+    pdf.output(output_path)
+
+    return send_file(output_path, as_attachment=True)
     operation = unidecode(request.args.get('operation', ''))
     input_values = unidecode(request.args.get('input_values', ''))
     result = unidecode(request.args.get('result', ''))
@@ -1055,33 +1085,30 @@ def download_log_pdf():
     pdf = FPDF()
     pdf.add_page()
 
+    # Font ayarı
     font_path = os.path.join('static', 'fonts', 'DejaVuSans.ttf')
     pdf.add_font('DejaVu', '', font_path, uni=True)
     pdf.set_font('DejaVu', '', 12)
 
-    pdf.cell(200, 10, txt=f"Operation: {operation}", ln=True)
-    pdf.cell(200, 10, txt=f"Input Values: {input_values}", ln=True)
-    pdf.cell(200, 10, txt=f"Result: {result}", ln=True)
+    # İçerik yazımı
+    pdf.multi_cell(0, 10, txt=f"Operation:\n{operation}")
+    pdf.ln(3)
 
-    if graph_path:
-        full_path = os.path.join('static', graph_path.replace('\\', '/').replace('static/', ''))
-        if os.path.exists(full_path):
-            pdf.ln(10)
-            try:
-                pdf.image(full_path, x=10, w=100)
-            except RuntimeError:
-                pdf.cell(200, 10, txt="Resim eklenemedi.", ln=True)
-        else:
-            pdf.cell(200, 10, txt="Görsel bulunamadı.", ln=True)
+    pdf.multi_cell(0, 10, txt=f"Input Values:\n{input_values}")
+    pdf.ln(3)
 
-    buffer = io.BytesIO()
-    pdf.output(buffer)
-    pdf_bytes = buffer.getvalue()
+    pdf.multi_cell(0, 10, txt=f"Result:\n{result}")
+    pdf.ln(5)
 
-    response = make_response(pdf_bytes)
-    response.headers.set('Content-Type', 'application/pdf')
-    response.headers.set('Content-Disposition', 'attachment', filename='log.pdf')
-    return response
+    # Grafik varsa ekle
+    if graph_path and os.path.exists(graph_path):
+        pdf.image(graph_path, x=10, y=pdf.get_y(), w=pdf.w - 20)
+    
+    # # PDF dosyasını kaydet
+    # output_path = 'output.pdf'
+    # pdf.output(output_path)
+
+    return send_file(output_path, as_attachment=True)
 
 if __name__ == '__main__':
     app.run(debug=True)

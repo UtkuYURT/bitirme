@@ -275,6 +275,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 });
+//!Log kayıtları modal açma
 document.addEventListener("DOMContentLoaded", function () {
   document.querySelectorAll(".log-detail-btn").forEach(function (el) {
     el.addEventListener("click", function () {
