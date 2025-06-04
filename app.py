@@ -1054,7 +1054,10 @@ def download_log_pdf():
 
     pdf = FPDF()
     pdf.add_page()
-    pdf.set_font("Arial", size=12)
+
+    font_path = os.path.join('static', 'fonts', 'DejaVuSans.ttf')
+    pdf.add_font('DejaVu', '', font_path, uni=True)
+    pdf.set_font('DejaVu', '', 12)
 
     pdf.cell(200, 10, txt=f"Operation: {operation}", ln=True)
     pdf.cell(200, 10, txt=f"Input Values: {input_values}", ln=True)
@@ -1063,16 +1066,19 @@ def download_log_pdf():
     if graph_path:
         full_path = os.path.join('static', graph_path.replace('\\', '/').replace('static/', ''))
         if os.path.exists(full_path):
-            # Resmi eklemeden önce biraz yer açalım
             pdf.ln(10)
             try:
                 pdf.image(full_path, x=10, w=100)
-            except RuntimeError as e:
+            except RuntimeError:
                 pdf.cell(200, 10, txt="Resim eklenemedi.", ln=True)
         else:
             pdf.cell(200, 10, txt="Görsel bulunamadı.", ln=True)
 
-    response = make_response(pdf.output(dest='S').encode('latin1'))
+    buffer = io.BytesIO()
+    pdf.output(buffer)
+    pdf_bytes = buffer.getvalue()
+
+    response = make_response(pdf_bytes)
     response.headers.set('Content-Type', 'application/pdf')
     response.headers.set('Content-Disposition', 'attachment', filename='log.pdf')
     return response
