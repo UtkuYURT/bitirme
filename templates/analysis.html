@@ -35,7 +35,21 @@ content %}
       <div class="table-responsive">{{ content|safe }}</div>
       {% else %}
       <!-- Metin içeriği render ediliyor -->
-      <pre class="text-content" id="text">{{ content }}</pre>
+      <textarea
+        id="text"
+        readonly
+        class="text-content"
+        style="
+          width: 100%;
+          height: 400px;
+          overflow-x: auto;
+          white-space: pre-wrap; 
+          resize: vertical;
+        "
+      >
+      {{ content }}
+      </textarea>
+
       {% endif %} {% else %}
       <p class="text-center text-danger">Dosya içeriği bulunamadı.</p>
       {% endif %}
@@ -55,11 +69,11 @@ content %}
   </div>
 
   <!-- TODO: Yapılacak -->
-  <div
-    id="loading-indicator"
-    style="display: none; text-align: center; margin-top: 20px"
-  >
-    <strong>Yükleniyor...</strong>
+  <div id="loading-indicator" style="display: none">
+    <div class="loading-content">
+      <div class="spinner"></div>
+      <div class="loading-text">Yükleniyor...</div>
+    </div>
   </div>
 
   <script src="{{ url_for('static', filename='js/select-cells.js') }}"></script>

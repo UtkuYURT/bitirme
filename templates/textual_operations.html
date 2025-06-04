@@ -30,7 +30,19 @@ show_right_sidebar = false %} {% block title %}Metinsel İşlemler{% endblock %}
           >{{ text_content[:125] }}{% if text_content|length > 125 %}...{% endif
           %}</em
         >
+        {% if text_content|length > 125 %}
+        <br />
+        <button
+          type="button"
+          class="btn btn-link p-0"
+          data-bs-toggle="modal"
+          data-bs-target="#fullTextModal"
+        >
+          Devamını Gör
+        </button>
+        {% endif %}
       </p>
+
       {% endif %}
     </div>
     <div class="card-body">
@@ -58,6 +70,35 @@ show_right_sidebar = false %} {% block title %}Metinsel İşlemler{% endblock %}
           <a href="{{ url_for('file_operations') }}"
             >Dosya İşlemlerine Geri Dön</a
           >
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div
+  class="modal fade"
+  id="fullTextModal"
+  tabindex="-1"
+  aria-labelledby="fullTextModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="fullTextModalLabel">Metnin Tamamı</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Kapat"
+        ></button>
+      </div>
+      <div class="modal-body" style="white-space: pre-wrap">
+        {{ text_content }}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Kapat
         </button>
       </div>
     </div>
