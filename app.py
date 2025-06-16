@@ -1044,9 +1044,51 @@ def ollama_logs():
 
     logs = get_log_llama(user_id)
     return render_template('ollama_logs.html', logs=logs)
-
 @app.route('/download_log_pdf')
 def download_log_pdf():
+    operation = unidecode(request.args.get('operation', ''))
+    input_values = unidecode(request.args.get('input_values', ''))
+    result = unidecode(request.args.get('result', ''))
+    graph_path = request.args.get('graph', '')
+
+    pdf = FPDF()
+    pdf.add_page()
+
+    font_path = os.path.join('static', 'fonts', 'DejaVuSans.ttf')
+    pdf.add_font('DejaVu', '', font_path, uni=True)
+    pdf.set_font('DejaVu', '', 12)
+
+    # multi_cell ile otomatik satır sonu
+    pdf.multi_cell(0, 8, txt=f"Operation: {operation}")
+    pdf.ln(2)
+    pdf.multi_cell(0, 8, txt=f"Input Values: {input_values}")
+    pdf.ln(2)
+    pdf.multi_cell(0, 8, txt=f"Result: {result}")
+    pdf.ln(5)
+
+    # Resim ekleme (önceki kodun gibi)
+    if graph_path:
+        full_path = os.path.join('static', graph_path.replace('\\', '/').replace('static/', ''))
+        if os.path.exists(full_path):
+            y = pdf.get_y()
+            try:
+                pdf.image(full_path, x=10, y=y, w=150)
+                # resimden sonra satırı ilerlet
+                pdf.set_y(y + 60 + 10)
+            except RuntimeError:
+                pdf.multi_cell(0, 8, txt="Resim eklenemedi.")
+        else:
+            pdf.multi_cell(0, 8, txt="Görsel bulunamadı.")
+
+    buffer = io.BytesIO()
+    pdf.output(buffer)
+    pdf_bytes = buffer.getvalue()
+
+    response = make_response(pdf_bytes)
+    response.headers.set('Content-Type', 'application/pdf')
+    response.headers.set('Content-Disposition', 'attachment', filename='log.pdf')
+    return response
+
     operation = request.args.get('operation', '')
     input_values = request.args.get('input_values', '')
     result = request.args.get('result', '')
